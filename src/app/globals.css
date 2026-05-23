@@ -1,27 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg-primary: #0A1628;
+  --color-bg-surface: #1C2E20;
+  --color-bg-card: #162318;
+  --color-primary: #1B4332;
+  --color-accent: #D4AF37;
+  --color-success: #00D084;
+  --color-danger: #FF4757;
+  --color-warning: #FFD32A;
+  --color-text-primary: #F5F0E8;
+  --color-text-secondary: #8B9E88;
+  --color-text-muted: #4A5E4C;
+  --color-border: rgba(255,255,255,0.08);
+  --color-glass: rgba(255,255,255,0.05);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background-color: #0A1628;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: #F5F0E8;
+  background-color: #0A1628;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
 }
 
 @layer utilities {
+  .font-syne {
+    font-family: 'Syne', sans-serif;
+  }
+  .font-dm {
+    font-family: 'DM Sans', sans-serif;
+  }
+  .font-jetbrains {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .glass-card {
+    background: var(--color-glass);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(8px);
+  }
+  .surface-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+  }
   .text-balance {
     text-wrap: balance;
   }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Bottom sheet backdrop */
+.sheet-backdrop {
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* Input focus ring */
+input:focus,
+textarea:focus {
+  outline: none;
+  ring: 1px solid var(--color-accent);
 }
