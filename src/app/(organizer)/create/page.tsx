@@ -16,5 +16,5 @@ export default async function CreateBillPage() {
     .eq("id", user.id)
     .single();
 
-  return <CreateBillClient profile={profile} userId={user.id} />;
+  return <CreateBillClient profile={profile} />;
 }

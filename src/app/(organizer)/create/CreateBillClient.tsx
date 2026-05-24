@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Profile, ScanResult } from "@/types";
-import { createClient } from "@/lib/supabase";
-import { generatePayCode, generatePersonalToken } from "@/lib/paycode";
+import { generatePayCode } from "@/lib/paycode";
 import { formatRM } from "@/lib/utils";
 import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import ReceiptScanner from "@/components/receipt/ReceiptScanner";
@@ -31,10 +30,9 @@ interface Member {
 
 interface Props {
   profile: Profile | null;
-  userId: string;
 }
 
-export default function CreateBillClient({ profile, userId }: Props) {
+export default function CreateBillClient({ profile }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -104,7 +102,6 @@ export default function CreateBillClient({ profile, userId }: Props) {
     setErrors([]);
 
     try {
-      const supabase = createClient();
       const payCode = generatePayCode(title);
       const validMembers = members.filter((m) => m.name.trim());
 
@@ -112,73 +109,37 @@ export default function CreateBillClient({ profile, userId }: Props) {
         splitMode === "scan" && scanResult ? scanResult.total : Number(totalAmount);
       const computedTax =
         splitMode === "scan" && scanResult ? scanResult.tax : Number(tax || "0");
-      const amountPerPerson = computedTotal / validMembers.length;
 
-      const { data: bill, error: billError } = await supabase
-        .from("bills")
-        .insert({
-          organizer_id: userId,
+      const res = await fetch("/api/bills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           title: title.trim(),
-          description: description.trim() || null,
+          description: description.trim() || undefined,
           category,
-          split_mode: splitMode,
-          total_amount: computedTotal,
+          splitMode,
+          totalAmount: computedTotal,
           tax: computedTax,
-          service_charge: splitMode === "scan" && scanResult ? scanResult.serviceCharge : 0,
-          pay_code: payCode,
-          due_date: dueDate,
-          status: "active",
-          store_name: splitMode === "scan" && scanResult ? scanResult.storeName : null,
-          receipt_edited: false,
-        })
-        .select()
-        .single();
+          serviceCharge: splitMode === "scan" && scanResult ? scanResult.serviceCharge : 0,
+          dueDate,
+          payCode,
+          storeName: splitMode === "scan" && scanResult ? scanResult.storeName : undefined,
+          members: validMembers,
+          items: splitMode === "scan" && scanResult ? scanResult.items : undefined,
+        }),
+      });
 
-      if (billError || !bill) throw billError ?? new Error("Gagal buat bil");
+      const json = await res.json() as {
+        bill?: { id: string };
+        members?: Array<{ name: string; phone: string; personal_token: string; amount_owed: number }>;
+        error?: string;
+      };
 
-      const memberRows = validMembers.map((m) => ({
-        bill_id: bill.id,
-        name: m.name.trim(),
-        phone: m.phone.trim() || null,
-        amount_owed: amountPerPerson,
-        paid: false,
-        personal_token: generatePersonalToken(),
-      }));
+      if (!res.ok || json.error) throw new Error(json.error ?? "Gagal buat bil");
 
-      const { data: insertedMembers, error: memberError } = await supabase
-        .from("bill_members")
-        .insert(memberRows)
-        .select();
-
-      if (memberError || !insertedMembers) throw memberError ?? new Error("Gagal tambah ahli");
-
-      // Insert bill items if scan mode
-      if (splitMode === "scan" && scanResult) {
-        const itemRows = scanResult.items.map((item, idx) => ({
-          bill_id: bill.id,
-          name: item.name,
-          original_price: item.price,
-          edited_price: item.price,
-          qty: item.qty,
-          is_edited: false,
-          total_units_available: item.qty,
-          total_units_claimed: 0,
-          item_type: "item" as const,
-          sort_order: idx,
-        }));
-        await supabase.from("bill_items").insert(itemRows);
-      }
-
-      setCreatedBillId(bill.id);
+      setCreatedBillId(json.bill!.id);
       setCreatedPayCode(payCode);
-      setCreatedMembers(
-        insertedMembers.map((m) => ({
-          name: m.name,
-          phone: m.phone ?? "",
-          personal_token: m.personal_token,
-          amount_owed: m.amount_owed,
-        }))
-      );
+      setCreatedMembers(json.members!);
       setStep(3);
     } catch (err) {
       setErrors([(err as Error).message ?? "Ralat tidak dijangka"]);

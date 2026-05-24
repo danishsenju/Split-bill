@@ -72,7 +72,7 @@ export default function RegisterPage() {
         }
       }
 
-      await supabase.from("profiles").insert({
+      const { error: profileError } = await supabase.from("profiles").insert({
         id: authData.user.id,
         name,
         email,
@@ -83,6 +83,8 @@ export default function RegisterPage() {
         bank_holder_name: paymentMethod === "bank" ? bankHolder : null,
         qr_url: qrUrl,
       });
+
+      if (profileError) throw new Error("Gagal simpan profil: " + profileError.message);
 
       router.push("/dashboard");
       router.refresh();
