@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { ScanResult } from "@/types";
@@ -10,25 +10,12 @@ import { formatRM } from "@/lib/utils";
 import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import ReceiptScanner from "@/components/receipt/ReceiptScanner";
 import WAToneSelector from "@/components/organizer/WAToneSelector";
-import CategoryIcon from "@/components/ui/CategoryIcon";
-import { NoiseBackground } from "@/components/ui/NoiseBackground";
 import Link from "next/link";
 import { useLang, createT } from "@/lib/language-context";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import dayjs, { Dayjs } from "dayjs";
-
-const CATEGORIES = [
-  "🍽️ Makan",
-  "🎉 Hiburan",
-  "✈️ Trip",
-  "🏠 Rumah",
-  "🏥 Kesihatan",
-  "📚 Belajar",
-  "🛒 Beli-belah",
-  "💡 Lain-lain",
-];
 
 interface Member {
   name: string;
@@ -84,12 +71,15 @@ function ErrorBox({ errors }: { errors: string[] }) {
 
 export default function CreateBillClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { lang } = useLang();
   const t = createT[lang];
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(
+    decodeURIComponent(searchParams.get("category") ?? "")
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -243,82 +233,6 @@ export default function CreateBillClient() {
             transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
             className="px-5 pt-6 flex flex-col gap-6"
           >
-            {/* Category — 4×2 grid */}
-            <div>
-              <FieldLabel>{t.labelCategory}</FieldLabel>
-              <div className="grid grid-cols-4 gap-2">
-                {CATEGORIES.map((cat) => {
-                  const sel = category === cat;
-
-                  const iconAndLabel = (
-                    <>
-                      <CategoryIcon
-                        category={cat}
-                        size={22}
-                        style={{
-                          opacity: sel ? 1 : 0.4,
-                          transition: "opacity 150ms cubic-bezier(0.23,1,0.32,1)",
-                        }}
-                      />
-                      <span
-                        className="font-dm text-center leading-tight"
-                        style={{
-                          fontSize: "9px",
-                          color: sel ? "#ffffff" : "#6d6d6d",
-                          maxWidth: "44px",
-                          transition: "color 150ms cubic-bezier(0.23,1,0.32,1)",
-                        }}
-                      >
-                        {t.categoryLabels[cat] ?? cat.replace(/^\S+\s*/, "")}
-                      </span>
-                    </>
-                  );
-
-                  if (sel) {
-                    return (
-                      <NoiseBackground
-                        key={cat}
-                        containerClassName="rounded-[10px]"
-                        gradientColors={[
-                          "rgb(160, 224, 171)",
-                          "rgb(255, 172, 46)",
-                          "rgb(165, 45, 37)",
-                        ]}
-                      >
-                        <button
-                          onClick={() => setCategory(cat)}
-                          className="flex flex-col items-center gap-1.5 py-3 w-full active:scale-[0.95]"
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            transition: "transform 120ms cubic-bezier(0.23,1,0.32,1)",
-                          }}
-                        >
-                          {iconAndLabel}
-                        </button>
-                      </NoiseBackground>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setCategory(cat)}
-                      className="flex flex-col items-center gap-1.5 py-3 active:scale-[0.93]"
-                      style={{
-                        background: "#111111",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: "10px",
-                        transition: "transform 120ms cubic-bezier(0.23,1,0.32,1)",
-                      }}
-                    >
-                      {iconAndLabel}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Title */}
             <div>
               <FieldLabel>{t.labelTitle}</FieldLabel>

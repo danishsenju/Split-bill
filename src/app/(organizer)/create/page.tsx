@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import CreateBillClient from "./CreateBillClient";
 
 export default async function CreateBillPage() {
@@ -10,5 +11,9 @@ export default async function CreateBillPage() {
 
   if (!user) redirect("/auth/login");
 
-  return <CreateBillClient />;
+  return (
+    <Suspense fallback={null}>
+      <CreateBillClient />
+    </Suspense>
+  );
 }
