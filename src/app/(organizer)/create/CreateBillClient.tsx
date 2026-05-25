@@ -85,7 +85,7 @@ function ErrorBox({ errors }: { errors: string[] }) {
   );
 }
 
-export default function CreateBillClient({ profile: _profile }: Props) {
+export default function CreateBillClient(_props: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -204,7 +204,7 @@ export default function CreateBillClient({ profile: _profile }: Props) {
       >
         {step < 3 && (
           <button
-            onClick={() => { setErrors([]); step === 2 ? setStep(1) : router.back(); }}
+            onClick={() => { setErrors([]); if (step === 2) { setStep(1); } else { router.back(); } }}
             className="active:scale-[0.88] shrink-0"
             style={{ color: "#6d6d6d", transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)" }}
           >

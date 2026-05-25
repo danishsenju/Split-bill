@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Share2, Bell, Flag, Check, RotateCcw } from "lucide-react";
+import { ArrowLeft, Share2, Bell, Flag, Check } from "lucide-react";
 import { Bill, Flag as FlagType } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { formatRM, formatDaysRemaining, getDaysRemaining, getInitial, formatTime } from "@/lib/utils";
