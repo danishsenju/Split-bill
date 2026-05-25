@@ -4,17 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { LayoutDashboard, Receipt, Plus, Inbox, User } from "lucide-react";
-
-const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Utama" },
-  { href: "/bills", icon: Receipt, label: "Bil" },
-  { href: "/create", icon: Plus, label: "", isCTA: true },
-  { href: "/inbox", icon: Inbox, label: "Inbox" },
-  { href: "/profile", icon: User, label: "Profil" },
-];
+import { useLang, navT } from "@/lib/language-context";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { lang } = useLang();
+  const t = navT[lang];
+
+  const navItems = [
+    { href: "/dashboard", icon: LayoutDashboard, label: t.home },
+    { href: "/bills", icon: Receipt, label: t.bills },
+    { href: "/create", icon: Plus, label: "", isCTA: true },
+    { href: "/inbox", icon: Inbox, label: t.inbox },
+    { href: "/profile", icon: User, label: t.profile },
+  ];
 
   return (
     <nav

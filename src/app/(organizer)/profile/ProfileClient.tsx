@@ -18,6 +18,7 @@ import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { getInitial, maskAccount, formatRM } from "@/lib/utils";
 import Aurora from "@/components/ui/Aurora";
+import { useLang } from "@/lib/language-context";
 
 interface Props {
   profile: Profile | null;
@@ -62,6 +63,7 @@ function SettingRow({
 
 export default function ProfileClient({ profile, billCount, totalCollected }: Props) {
   const router = useRouter();
+  const { lang, setLang } = useLang();
   const [loggingOut, setLoggingOut] = useState(false);
   const [reminderDays, setReminderDays] = useState(3);
   const [waNotif, setWaNotif] = useState(true);
@@ -348,9 +350,30 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
             {/* Language */}
             <SettingRow
               icon={<Globe size={16} />}
-              label="Bahasa"
-              sublabel="Bahasa Malaysia"
-              right={<ChevronRight size={15} style={{ color: "#6d6d6d" }} />}
+              label="Bahasa / Language"
+              sublabel={lang === "bm" ? "Bahasa Malaysia" : "English"}
+              right={
+                <div className="flex items-center gap-1 shrink-0">
+                  {(["bm", "en"] as const).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => setLang(l)}
+                      className="font-dm font-medium active:scale-[0.88]"
+                      style={{
+                        fontSize: "11px",
+                        padding: "4px 10px",
+                        borderRadius: "99px",
+                        transition: "background 200ms, color 200ms, transform 160ms cubic-bezier(0.23,1,0.32,1)",
+                        background: lang === l ? "#ffffff" : "rgba(255,255,255,0.06)",
+                        color: lang === l ? "#000000" : "#6d6d6d",
+                        border: lang === l ? "none" : "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      {l === "bm" ? "BM" : "EN"}
+                    </button>
+                  ))}
+                </div>
+              }
             />
 
             {/* WA notifications toggle */}

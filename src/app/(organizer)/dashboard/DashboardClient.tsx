@@ -11,15 +11,17 @@ import ProgressRing from "@/components/ui/ProgressRing";
 import Grainient from "@/components/ui/Grainient";
 import { NoiseBackground } from "@/components/ui/NoiseBackground";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { useLang, dashboardT } from "@/lib/language-context";
 
 // ─── Internal mini card for the 2-col bills grid ──────────────────────────
 // Separate from BillCard (used on Bills page) — designed for compact grid layout.
 interface MiniBillCardProps {
   bill: Bill;
   delay: number;
+  t: typeof dashboardT[keyof typeof dashboardT];
 }
 
-function MiniBillCard({ bill, delay }: MiniBillCardProps) {
+function MiniBillCard({ bill, delay, t }: MiniBillCardProps) {
   const members = bill.bill_members ?? [];
   const paidCount = members.filter((m) => m.paid).length;
   const totalCount = members.length;
@@ -78,17 +80,17 @@ function MiniBillCard({ bill, delay }: MiniBillCardProps) {
 
           <div className="flex items-center justify-between">
             <span className="font-dm text-whisper" style={{ fontSize: "11px" }}>
-              {paidCount}/{totalCount} bayar
+              {paidCount}/{totalCount} {t.paid}
             </span>
             <span
               className={`font-dm ${isOverdue ? "text-red-400" : "text-whisper"}`}
               style={{ fontSize: "11px" }}
             >
               {isOverdue
-                ? `${Math.abs(daysLeft)}h lepas`
+                ? t.daysAgo(Math.abs(daysLeft))
                 : daysLeft === 0
-                ? "Hari ini"
-                : `${daysLeft}h lagi`}
+                ? t.today
+                : t.daysLeft(daysLeft)}
             </span>
           </div>
         </NoiseBackground>
@@ -107,6 +109,8 @@ interface Props {
 // ─── Main dashboard component ───────────────────────────────────────────────
 export default function DashboardClient({ profile, bills: initialBills, userId }: Props) {
   const [bills, setBills] = useState<Bill[]>(initialBills);
+  const { lang } = useLang();
+  const t = dashboardT[lang];
 
   // Supabase realtime subscription
   useEffect(() => {
@@ -140,9 +144,9 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
   const firstName = profile?.name?.split(" ")[0] ?? "Organizer";
 
   const statItems = [
-    { value: bills.length, label: "Bil Aktif" },
-    { value: allMembers.length, label: "Jumlah Ahli" },
-    { value: paidMembers.length, label: "Dah Bayar" },
+    { value: bills.length, label: t.statBilAktif },
+    { value: allMembers.length, label: t.statJumlahAhli },
+    { value: paidMembers.length, label: t.statDahBayar },
   ];
 
   const heroContainerVariants = {
@@ -199,7 +203,7 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
               className="font-dm mb-1"
               style={{ fontSize: "14px", color: "rgba(255,255,255,0.65)", textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}
             >
-              Assalamualaikum,
+              {t.greeting}
             </p>
             <h1
               className="font-clash font-bold leading-tight"
@@ -225,7 +229,7 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
                 className="font-dm mt-2"
                 style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}
               >
-                daripada {formatRM(totalExpected)}
+                {t.of} {formatRM(totalExpected)}
               </p>
             </div>
 
@@ -291,7 +295,7 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
             className="font-clash font-bold text-frost leading-none"
             style={{ fontSize: "22px" }}
           >
-            Bil Aktif
+            {t.sectionBilAktif}
           </h2>
           <Link
             href="/bills"
@@ -301,7 +305,7 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
               transition: "opacity 150ms cubic-bezier(0.23, 1, 0.32, 1)",
             }}
           >
-            Semua →
+            {t.seeAll}
           </Link>
         </motion.div>
 
@@ -332,10 +336,10 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
                   className="font-clash font-bold text-frost mb-1"
                   style={{ fontSize: "18px" }}
                 >
-                  Tiada bil aktif
+                  {t.emptyTitle}
                 </h3>
                 <p className="font-dm text-whisper text-sm">
-                  Buat bil pertama kamu dan kongsikan dengan rakan-rakan.
+                  {t.emptyDesc}
                 </p>
               </div>
               <Link
@@ -351,7 +355,7 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
                 }}
               >
                 <Plus size={15} />
-                Buat Bil Baru
+                {t.createBill}
               </Link>
             </div>
           </motion.div>
@@ -359,7 +363,7 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
           /* ── 2-column bills grid ─────────────────────────────────────── */
           <div className="grid grid-cols-2 gap-3">
             {bills.map((bill, i) => (
-              <MiniBillCard key={bill.id} bill={bill} delay={i * 0.05} />
+              <MiniBillCard key={bill.id} bill={bill} delay={i * 0.05} t={t} />
             ))}
           </div>
         )}

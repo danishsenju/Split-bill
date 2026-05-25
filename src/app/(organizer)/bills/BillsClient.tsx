@@ -7,20 +7,23 @@ import { Search, Plus, ChevronDown } from "lucide-react";
 import { Bill } from "@/types";
 import { formatRM, getDaysRemaining } from "@/lib/utils";
 import BillCard from "@/components/ui/BillCard";
+import { useLang, billsT } from "@/lib/language-context";
 
 type Filter = "all" | "active" | "overdue" | "completed";
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: "all", label: "Semua" },
-  { key: "active", label: "Aktif" },
-  { key: "overdue", label: "Lewat" },
-  { key: "completed", label: "Selesai" },
-];
-
 export default function BillsClient({ bills }: { bills: Bill[] }) {
+  const { lang } = useLang();
+  const t = billsT[lang];
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [showCompleted, setShowCompleted] = useState(false);
+
+  const FILTERS: { key: Filter; label: string }[] = [
+    { key: "all", label: t.filterAll },
+    { key: "active", label: t.filterActive },
+    { key: "overdue", label: t.filterOverdue },
+    { key: "completed", label: t.filterCompleted },
+  ];
 
   const uncollected = bills
     .filter((b) => b.status !== "completed")
@@ -68,7 +71,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
           className="font-clash font-bold text-frost mb-5"
           style={{ fontSize: "28px" }}
         >
-          Bil Saya
+          {t.pageTitle}
         </motion.h1>
 
         {/* Outstanding card */}
@@ -97,7 +100,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
               className="font-dm text-whisper uppercase mb-1"
               style={{ fontSize: "10px", letterSpacing: "0.1em" }}
             >
-              Baki Belum Terkumpul
+              {t.outstanding}
             </p>
             <p
               className="font-clash font-bold leading-none"
@@ -123,7 +126,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari tajuk atau Pay Code..."
+            placeholder={t.searchPlaceholder}
             className="w-full font-dm text-sm placeholder:text-whisper scrollbar-hide"
             style={{
               background: "#111111",
@@ -184,7 +187,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
           >
             <span className="text-4xl">🧾</span>
             <p className="font-dm text-whisper text-sm">
-              {search ? "Tiada hasil carian" : "Tiada bil lagi"}
+              {search ? t.emptySearch : t.emptyAll}
             </p>
           </motion.div>
         ) : (
@@ -193,7 +196,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
             {/* Overdue group */}
             {overdueGroup.length > 0 && (
               <div>
-                <SectionLabel emoji="⚠" label="Lewat" count={overdueGroup.length} color="#ef4444" />
+                <SectionLabel emoji="⚠" label={t.groupOverdue} count={overdueGroup.length} color="#ef4444" />
                 <div className="flex flex-col gap-3">
                   {overdueGroup.map((bill, i) => (
                     <motion.div
@@ -212,7 +215,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
             {/* Active group */}
             {activeGroup.length > 0 && (
               <div>
-                <SectionLabel emoji="●" label="Aktif" count={activeGroup.length} />
+                <SectionLabel emoji="●" label={t.groupActive} count={activeGroup.length} />
                 <div className="flex flex-col gap-3">
                   {activeGroup.map((bill, i) => (
                     <motion.div
@@ -240,7 +243,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
                     className="font-dm uppercase"
                     style={{ fontSize: "11px", letterSpacing: "0.08em", color: "#6d6d6d" }}
                   >
-                    ✓ Selesai
+                    ✓ {t.groupCompleted}
                   </span>
                   <span
                     className="font-dm"

@@ -6,19 +6,22 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { ChevronDown, LogOut, User } from "lucide-react";
-
-const navLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/bills", label: "Bil" },
-  { href: "/create", label: "Buat Bil", isCTA: true },
-  { href: "/inbox", label: "Inbox" },
-];
+import { useLang, navT } from "@/lib/language-context";
 
 export default function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { lang } = useLang();
+  const t = navT[lang];
   const [userInitial, setUserInitial] = useState("U");
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const navLinks = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/bills", label: t.bills },
+    { href: "/create", label: t.createBill, isCTA: true },
+    { href: "/inbox", label: t.inbox },
+  ];
 
   useEffect(() => {
     const client = createClient();
@@ -184,7 +187,7 @@ export default function TopNav() {
                     }
                   >
                     <User size={14} />
-                    Profil
+                    {t.profileLink}
                   </Link>
                   <div style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
                   <button
@@ -199,7 +202,7 @@ export default function TopNav() {
                     }
                   >
                     <LogOut size={14} />
-                    Log Keluar
+                    {t.logout}
                   </button>
                 </motion.div>
               </>

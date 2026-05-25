@@ -249,7 +249,7 @@ const Grainient: React.FC<GrainientProps> = ({
     const io = new IntersectionObserver(
       ([entry]) => {
         isVisible = entry.isIntersecting;
-        isVisible ? tryStart() : tryStop();
+        if (isVisible) { tryStart(); } else { tryStop(); }
       },
       { threshold: 0 }
     );
@@ -257,7 +257,7 @@ const Grainient: React.FC<GrainientProps> = ({
 
     const onVisibility = () => {
       isPageVisible = !document.hidden;
-      isPageVisible ? tryStart() : tryStop();
+      if (isPageVisible) { tryStart(); } else { tryStop(); }
     };
     document.addEventListener("visibilitychange", onVisibility);
 
