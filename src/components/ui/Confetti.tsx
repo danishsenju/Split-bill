@@ -14,7 +14,7 @@ interface Particle {
   rotationSpeed: number;
 }
 
-const COLORS = ["#00D084", "#D4AF37", "#F5F0E8", "#FF4757", "#FFD32A"];
+const COLORS = ["#22C55E", "#E8B84B", "#F1F0EB", "#EF4444", "#F59E0B"];
 
 export default function Confetti({ active }: { active: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);

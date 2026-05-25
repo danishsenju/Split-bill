@@ -404,7 +404,3 @@ A feature is complete when:
 4. Supabase data persists on refresh
 5. No TypeScript errors
 6. Matches design handoff screens
-
-## Design File
-https://api.anthropic.com/v1/design/h/5_1m73TH707nAK5Uz3ft8A
-Fetch this URL for the complete design spec and component details.

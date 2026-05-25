@@ -3,22 +3,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import {
-  CheckCircle,
-  Flag,
-  Bell,
-  FileText,
-  CreditCard,
-  Plus,
-} from "lucide-react";
 import { ActivityLog, ActivityType } from "@/types";
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatTime } from "@/lib/utils";
 
 type FilterType = "semua" | "flags" | "bayaran" | "reminder";
-
-interface Props {
-  activities: ActivityLog[];
-}
 
 const FILTER_LABELS: Record<FilterType, string> = {
   semua: "Semua",
@@ -27,42 +15,41 @@ const FILTER_LABELS: Record<FilterType, string> = {
   reminder: "Reminder",
 };
 
-function getActivityIcon(type: ActivityType) {
+// Dot color for the timeline indicator
+function getDotColor(type: ActivityType): string {
   switch (type) {
     case "payment_confirmed":
     case "payment_manual":
-      return <CheckCircle size={18} className="text-success" />;
-    case "flag_created":
-      return <Flag size={18} className="text-danger" />;
     case "flag_resolved":
-      return <Flag size={18} className="text-success" />;
-    case "reminder_sent":
-      return <Bell size={18} className="text-warning" />;
-    case "bill_created":
-      return <Plus size={18} className="text-accent" />;
     case "bill_completed":
-      return <FileText size={18} className="text-success" />;
+      return "#22c55e";
+    case "flag_created":
+      return "#ef4444";
+    case "reminder_sent":
+      return "#f59e0b";
+    case "bill_created":
+      return "#ffffff";
     default:
-      return <CreditCard size={18} className="text-text-secondary" />;
+      return "#6d6d6d";
   }
 }
 
-function getActivityBg(type: ActivityType): string {
+// Small emoji glyph shown inside the dot
+function getDotGlyph(type: ActivityType): string {
   switch (type) {
     case "payment_confirmed":
     case "payment_manual":
-      return "bg-success/10";
-    case "flag_created":
-      return "bg-danger/10";
     case "flag_resolved":
-      return "bg-success/10";
-    case "reminder_sent":
-      return "bg-warning/10";
-    case "bill_created":
     case "bill_completed":
-      return "bg-accent/10";
+      return "✓";
+    case "flag_created":
+      return "⚑";
+    case "reminder_sent":
+      return "◎";
+    case "bill_created":
+      return "+";
     default:
-      return "bg-bg-surface";
+      return "·";
   }
 }
 
@@ -74,78 +61,231 @@ function matchesFilter(type: ActivityType, filter: FilterType): boolean {
   return true;
 }
 
+function groupByDate(list: ActivityLog[]): { label: string; items: ActivityLog[] }[] {
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const todayItems: ActivityLog[] = [];
+  const yesterdayItems: ActivityLog[] = [];
+  const olderItems: ActivityLog[] = [];
+
+  list.forEach((a) => {
+    const d = new Date(a.created_at);
+    d.setHours(0, 0, 0, 0);
+    if (d.getTime() === today.getTime()) todayItems.push(a);
+    else if (d.getTime() === yesterday.getTime()) yesterdayItems.push(a);
+    else olderItems.push(a);
+  });
+
+  const groups: { label: string; items: ActivityLog[] }[] = [];
+  if (todayItems.length > 0) groups.push({ label: "Hari Ini", items: todayItems });
+  if (yesterdayItems.length > 0) groups.push({ label: "Semalam", items: yesterdayItems });
+  if (olderItems.length > 0) groups.push({ label: "Sebelum Ini", items: olderItems });
+  return groups;
+}
+
+interface Props {
+  activities: ActivityLog[];
+}
+
 export default function InboxClient({ activities }: Props) {
   const [filter, setFilter] = useState<FilterType>("semua");
 
   const filtered = activities.filter((a) => matchesFilter(a.activity_type, filter));
+  const groups = groupByDate(filtered);
+  const activeFlags = activities.filter((a) => a.activity_type === "flag_created").length;
 
   return (
-    <div className="min-h-dvh bg-bg-primary pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-bg-primary/90 backdrop-blur-md px-4 pt-12 pb-3">
-        <h1 className="font-syne font-bold text-2xl text-text-primary mb-3">
-          Peti Masuk
-        </h1>
+    <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "112px" }}>
 
-        {/* Filter chips */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      {/* ── STICKY HEADER ─────────────────────────────────────────────── */}
+      <header
+        className="sticky top-0 z-10 px-5 pt-6 pb-4 md:top-[60px]"
+        style={{
+          background: "rgba(0,0,0,0.92)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        {/* Title row */}
+        <div className="flex items-end justify-between mb-4">
+          <h1
+            className="font-clash font-bold text-frost leading-none"
+            style={{ fontSize: "28px" }}
+          >
+            Peti Masuk
+          </h1>
+
+          {/* Active flag badge */}
+          {activeFlags > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-1.5"
+              style={{
+                background: "rgba(239,68,68,0.10)",
+                border: "1px solid rgba(239,68,68,0.25)",
+                borderRadius: "75.024px",
+                padding: "4px 10px",
+              }}
+            >
+              <span style={{ fontSize: "10px" }}>⚑</span>
+              <span
+                className="font-dm"
+                style={{ fontSize: "11px", color: "#ef4444" }}
+              >
+                {activeFlags} bendera
+              </span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Filter pills */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
           {(Object.keys(FILTER_LABELS) as FilterType[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-pill text-xs font-dm font-medium whitespace-nowrap transition-colors shrink-0 ${
-                filter === f
-                  ? "bg-accent text-bg-primary"
-                  : "bg-bg-surface text-text-secondary border border-white/10"
-              }`}
+              className="whitespace-nowrap font-dm text-xs shrink-0 active:scale-[0.95]"
+              style={{
+                padding: "6px 16px",
+                borderRadius: "75.024px",
+                border:
+                  filter === f
+                    ? "1px solid rgba(255,255,255,0.3)"
+                    : "1px solid transparent",
+                color: filter === f ? "#ffffff" : "#6d6d6d",
+                background: "transparent",
+                transition:
+                  "color 150ms cubic-bezier(0.23,1,0.32,1), border-color 150ms cubic-bezier(0.23,1,0.32,1), transform 120ms",
+              }}
             >
               {FILTER_LABELS[f]}
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
-      <div className="px-4 pt-2 flex flex-col gap-2">
+      {/* ── FEED ──────────────────────────────────────────────────────── */}
+      <div className="px-5 pt-5">
         <AnimatePresence mode="popLayout">
           {filtered.length === 0 ? (
+            /* Empty state */
             <motion.div
               key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-20 gap-3"
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              className="flex flex-col items-center justify-center py-20 gap-4 text-center"
             >
-              <span className="text-5xl">📭</span>
-              <p className="font-syne font-bold text-text-primary text-lg">
-                Tiada aktiviti lagi
-              </p>
-              <p className="text-text-muted text-sm font-dm text-center">
-                Notifikasi bil dan bayaran akan muncul di sini.
-              </p>
+              {/* Orb glow */}
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  fontSize: "36px",
+                }}
+              >
+                📭
+              </div>
+              <div>
+                <p
+                  className="font-clash font-bold text-frost"
+                  style={{ fontSize: "18px" }}
+                >
+                  Tiada aktiviti
+                </p>
+                <p
+                  className="font-dm text-whisper text-sm mt-1"
+                  style={{ maxWidth: "220px", lineHeight: 1.5 }}
+                >
+                  Notifikasi bil dan bayaran akan muncul di sini.
+                </p>
+              </div>
             </motion.div>
           ) : (
-            filtered.map((activity, i) => {
-              const billId = (activity.bills as { id: string } | null)?.id;
+            /* Timeline groups */
+            <div className="flex flex-col gap-6">
+              {groups.map((group) => (
+                <motion.div key={group.label} layout>
 
-              return (
-                <motion.div
-                  key={activity.id}
-                  layout
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ delay: i * 0.03 }}
-                >
-                  {billId ? (
-                    <Link href={`/bills/${billId}`}>
-                      <ActivityItem activity={activity} />
-                    </Link>
-                  ) : (
-                    <ActivityItem activity={activity} />
-                  )}
+                  {/* Section divider */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <span
+                      className="font-dm uppercase shrink-0"
+                      style={{ fontSize: "10px", letterSpacing: "0.10em", color: "#6d6d6d" }}
+                    >
+                      {group.label}
+                    </span>
+                    <div
+                      className="flex-1"
+                      style={{ height: "1px", background: "rgba(255,255,255,0.06)" }}
+                    />
+                    <span
+                      className="font-dm shrink-0"
+                      style={{
+                        fontSize: "10px",
+                        color: "#6d6d6d",
+                        background: "rgba(255,255,255,0.04)",
+                        borderRadius: "99px",
+                        padding: "2px 8px",
+                      }}
+                    >
+                      {group.items.length}
+                    </span>
+                  </div>
+
+                  {/* Timeline items */}
+                  <div className="relative">
+                    {/* Vertical connector line */}
+                    <div
+                      className="absolute top-3 bottom-3 pointer-events-none"
+                      style={{
+                        left: "11px",
+                        width: "1px",
+                        background:
+                          "linear-gradient(to bottom, transparent, rgba(255,255,255,0.08) 15%, rgba(255,255,255,0.08) 85%, transparent)",
+                      }}
+                    />
+
+                    <div className="flex flex-col gap-0">
+                      {group.items.map((activity, i) => {
+                        const billId = (activity.bills as { id: string } | null)?.id;
+                        return (
+                          <motion.div
+                            key={activity.id}
+                            layout
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -16 }}
+                            transition={{
+                              delay: i * 0.04,
+                              ease: [0.23, 1, 0.32, 1],
+                              duration: 0.3,
+                            }}
+                          >
+                            {billId ? (
+                              <Link href={`/bills/${billId}`}>
+                                <TimelineItem activity={activity} />
+                              </Link>
+                            ) : (
+                              <TimelineItem activity={activity} />
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </motion.div>
-              );
-            })
+              ))}
+            </div>
           )}
         </AnimatePresence>
       </div>
@@ -153,31 +293,61 @@ export default function InboxClient({ activities }: Props) {
   );
 }
 
-function ActivityItem({ activity }: { activity: ActivityLog }) {
-  const dateStr = formatDate(activity.created_at);
+// ─── Timeline item ─────────────────────────────────────────────────────────
+function TimelineItem({ activity }: { activity: ActivityLog }) {
+  const dotColor = getDotColor(activity.activity_type);
+  const glyph = getDotGlyph(activity.activity_type);
   const timeStr = formatTime(activity.created_at);
+  const billTitle = (activity.bills as { title?: string } | null)?.title;
 
   return (
-    <div className="surface-card rounded-card p-4 flex items-start gap-3">
-      <div
-        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${getActivityBg(
-          activity.activity_type
-        )}`}
-      >
-        {getActivityIcon(activity.activity_type)}
+    <div
+      className="flex gap-4 py-3 active:opacity-70"
+      style={{ transition: "opacity 150ms" }}
+    >
+      {/* Timeline dot */}
+      <div className="shrink-0 flex flex-col items-center" style={{ width: "24px" }}>
+        <div
+          className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0"
+          style={{
+            background: `${dotColor}18`,
+            border: `1px solid ${dotColor}40`,
+            color: dotColor,
+            fontSize: "9px",
+            fontWeight: 700,
+            lineHeight: 1,
+            fontFamily: "inherit",
+          }}
+        >
+          {glyph}
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-text-primary font-dm text-sm leading-snug">
-          {activity.description}
-        </p>
-        {(activity.bills as { title?: string } | null)?.title && (
-          <p className="text-text-muted text-xs font-dm mt-0.5 truncate">
-            {(activity.bills as { title: string }).title}
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 pb-1">
+        <div className="flex items-start justify-between gap-2">
+          <p
+            className="font-dm text-frost leading-snug flex-1"
+            style={{ fontSize: "14px" }}
+          >
+            {activity.description}
+          </p>
+          <span
+            className="font-dm shrink-0"
+            style={{ fontSize: "10px", color: "#6d6d6d", marginTop: "2px" }}
+          >
+            {timeStr}
+          </span>
+        </div>
+
+        {billTitle && (
+          <p
+            className="font-dm mt-1 truncate"
+            style={{ fontSize: "12px", color: "#6d6d6d" }}
+          >
+            {billTitle}
           </p>
         )}
-        <p className="text-text-muted text-[10px] font-dm mt-1">
-          {dateStr} · {timeStr}
-        </p>
       </div>
     </div>
   );

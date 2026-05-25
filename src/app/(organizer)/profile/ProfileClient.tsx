@@ -16,13 +16,51 @@ import {
 } from "lucide-react";
 import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
-import { getInitial, maskAccount } from "@/lib/utils";
+import { getInitial, maskAccount, formatRM } from "@/lib/utils";
+import Aurora from "@/components/ui/Aurora";
 
 interface Props {
   profile: Profile | null;
+  billCount: number;
+  totalCollected: number;
 }
 
-export default function ProfileClient({ profile }: Props) {
+// ─── Shared row component for settings ────────────────────────────────────
+function SettingRow({
+  icon,
+  label,
+  sublabel,
+  right,
+  border = true,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel: string;
+  right: React.ReactNode;
+  border?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-4"
+      style={{
+        borderBottom: border ? "1px solid rgba(255,255,255,0.05)" : "none",
+      }}
+    >
+      <div style={{ color: "#6d6d6d", flexShrink: 0 }}>{icon}</div>
+      <div className="flex-1 min-w-0">
+        <p className="font-dm text-frost" style={{ fontSize: "14px" }}>
+          {label}
+        </p>
+        <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>
+          {sublabel}
+        </p>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+export default function ProfileClient({ profile, billCount, totalCollected }: Props) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [reminderDays, setReminderDays] = useState(3);
@@ -37,199 +75,377 @@ export default function ProfileClient({ profile }: Props) {
 
   const name = profile?.name ?? "Pengguna";
   const email = profile?.email ?? "";
-  const phone = profile?.phone ?? "";
+  const initial = getInitial(name);
 
   return (
-    <div className="min-h-dvh bg-bg-primary pb-28">
-      {/* Header */}
-      <div className="px-4 pt-12 pb-4">
-        <h1 className="font-syne font-bold text-2xl text-text-primary">Profil</h1>
-      </div>
+    <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "112px" }}>
 
-      <div className="px-4 flex flex-col gap-4">
-        {/* User info card */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="surface-card rounded-card p-5 flex items-center gap-4"
-        >
-          <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-            <span className="font-syne font-bold text-2xl text-accent">
-              {getInitial(name)}
-            </span>
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+        className="relative overflow-hidden flex flex-col items-center pt-10 pb-8 px-5"
+        style={{ background: "#000000" }}
+      >
+        {/* Aurora WebGL background */}
+        <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.9 }}>
+          <Aurora
+            colorStops={["#F97316", "#EF4444", "#7C3AED"]}
+            blend={0.79}
+            amplitude={1.0}
+            speed={0.5}
+          />
+        </div>
+
+        {/* Avatar */}
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center font-clash font-bold"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              fontSize: "32px",
+              color: "#ffffff",
+            }}
+          >
+            {initial}
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-syne font-bold text-text-primary text-lg truncate">{name}</h2>
+
+          <div className="flex flex-col items-center gap-1">
+            <h2
+              className="font-clash font-bold text-frost leading-none"
+              style={{ fontSize: "26px" }}
+            >
+              {name}
+            </h2>
             {email && (
-              <p className="text-text-secondary font-dm text-sm truncate">{email}</p>
-            )}
-            {phone && (
-              <p className="text-text-muted font-dm text-xs mt-0.5">{phone}</p>
+              <p className="font-dm text-whisper" style={{ fontSize: "13px" }}>
+                {email}
+              </p>
             )}
           </div>
-        </motion.div>
+        </div>
 
-        {/* Payment method card */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="surface-card rounded-card p-5 flex flex-col gap-4"
+        {/* Stats — 2-col grid */}
+        <div
+          className="relative z-10 grid grid-cols-2 gap-px w-full mt-6 overflow-hidden"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "10px",
+          }}
         >
-          <div className="flex items-center justify-between">
-            <p className="text-text-secondary text-sm font-dm font-medium">Kaedah Pembayaran</p>
+          <div className="flex flex-col items-center gap-1 py-4" style={{ background: "#111111" }}>
+            <p
+              className="font-clash font-bold text-frost leading-none"
+              style={{ fontSize: "24px" }}
+            >
+              {billCount}
+            </p>
+            <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>
+              Bil Dibuat
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-1 py-4" style={{ background: "#111111" }}>
+            <p
+              className="font-clash font-bold leading-none"
+              style={{
+                fontSize: "24px",
+                background: "var(--gradient-deep-ocean)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              {formatRM(totalCollected)}
+            </p>
+            <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>
+              Terkumpul
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Separator */}
+      <div style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
+
+      <div className="px-5 pt-6 flex flex-col gap-6">
+
+        {/* ── PAYMENT METHOD ──────────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <SectionLabel label="Kaedah Pembayaran">
             <Link
               href="/auth/register"
-              className="text-accent text-xs font-dm"
+              className="font-dm text-whisper active:opacity-50"
+              style={{ fontSize: "12px", transition: "opacity 150ms" }}
             >
-              Tukar Akaun
+              Tukar →
             </Link>
-          </div>
+          </SectionLabel>
 
-          {profile?.payment_method === "qr" && profile?.qr_url ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="bg-white rounded-card p-3 w-40 h-40 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={profile.qr_url}
-                  alt="DuitNow QR"
-                  className="w-full h-full object-contain"
-                />
+          <div
+            style={{
+              background: "#111111",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "10px",
+              overflow: "hidden",
+            }}
+          >
+            {profile?.payment_method === "qr" && profile?.qr_url ? (
+              /* QR Code */
+              <div className="flex flex-col items-center gap-4 p-6">
+                <div
+                  className="rounded-[10px] p-3"
+                  style={{ background: "#ffffff" }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={profile.qr_url}
+                    alt="DuitNow QR"
+                    className="w-36 h-36 object-contain"
+                  />
+                </div>
+                <div className="flex items-center gap-2" style={{ color: "#22c55e" }}>
+                  <QrCode size={15} />
+                  <span className="font-dm text-sm">DuitNow QR</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-success">
-                <QrCode size={16} />
-                <span className="text-sm font-dm">DuitNow QR</span>
+            ) : profile?.bank_name ? (
+              /* Bank account */
+              <div className="p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard size={14} style={{ color: "#6d6d6d" }} />
+                    <span className="font-dm font-semibold text-frost" style={{ fontSize: "14px" }}>
+                      {profile.bank_name}
+                    </span>
+                  </div>
+                  <span
+                    className="font-dm"
+                    style={{
+                      fontSize: "11px",
+                      color: "#22c55e",
+                      background: "rgba(34,197,94,0.08)",
+                      border: "1px solid rgba(34,197,94,0.2)",
+                      borderRadius: "75.024px",
+                      padding: "2px 8px",
+                    }}
+                  >
+                    Aktif
+                  </span>
+                </div>
+                <div
+                  className="rounded-[10px] px-4 py-3"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                >
+                  <p
+                    className="font-jetbrains text-frost"
+                    style={{ fontSize: "18px", letterSpacing: "3px" }}
+                  >
+                    {profile.bank_account ? maskAccount(profile.bank_account) : "—"}
+                  </p>
+                  {profile.bank_holder_name && (
+                    <p className="font-dm text-whisper mt-1" style={{ fontSize: "12px" }}>
+                      {profile.bank_holder_name}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : profile?.bank_name ? (
-            <div className="bg-bg-primary rounded-input px-4 py-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <CreditCard size={18} className="text-accent" />
-                <span className="font-dm font-semibold text-text-primary text-sm">
-                  {profile.bank_name}
-                </span>
+            ) : (
+              /* Empty state */
+              <div className="flex flex-col items-center gap-3 py-8 px-4 text-center">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <CreditCard size={20} style={{ color: "#6d6d6d" }} />
+                </div>
+                <p className="font-dm text-whisper text-sm">Tiada kaedah pembayaran</p>
+                <Link
+                  href="/auth/register"
+                  className="font-dm font-semibold text-sm active:scale-[0.97]"
+                  style={{
+                    background: "var(--gradient-deep-ocean)",
+                    borderRadius: "75.024px",
+                    padding: "8px 20px",
+                    color: "#000000",
+                    transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
+                  }}
+                >
+                  Tambah sekarang
+                </Link>
               </div>
-              <p className="font-jetbrains text-accent text-lg tracking-widest">
-                {profile.bank_account ? maskAccount(profile.bank_account) : "—"}
-              </p>
-              {profile.bank_holder_name && (
-                <p className="text-text-muted text-xs font-dm">{profile.bank_holder_name}</p>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2 py-4">
-              <CreditCard size={28} className="text-text-muted" />
-              <p className="text-text-muted text-sm font-dm">Tiada kaedah pembayaran</p>
-              <Link
-                href="/auth/register"
-                className="text-accent text-sm font-dm underline"
-              >
-                Tambah sekarang
-              </Link>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
 
-        {/* Settings */}
+        {/* ── SETTINGS ──────────────────────────────────────────────────── */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="surface-card rounded-card overflow-hidden"
+          transition={{ delay: 0.12, ease: [0.23, 1, 0.32, 1] }}
         >
-          {/* Reminder days */}
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-white/6">
-            <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
-              <Bell size={15} className="text-warning" />
-            </div>
-            <div className="flex-1">
-              <p className="text-text-primary font-dm text-sm">Peringatan</p>
-              <p className="text-text-muted text-xs font-dm">Sebelum tarikh akhir</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setReminderDays((d) => Math.max(1, d - 1))}
-                className="w-7 h-7 rounded-full bg-bg-primary flex items-center justify-center text-text-secondary font-dm"
-              >
-                −
-              </button>
-              <span className="text-accent font-dm text-sm font-semibold w-8 text-center">
-                {reminderDays}h
-              </span>
-              <button
-                onClick={() => setReminderDays((d) => Math.min(14, d + 1))}
-                className="w-7 h-7 rounded-full bg-bg-primary flex items-center justify-center text-text-secondary font-dm"
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <SectionLabel label="Tetapan" />
 
-          {/* Language */}
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-white/6">
-            <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-              <Globe size={15} className="text-accent" />
-            </div>
-            <div className="flex-1">
-              <p className="text-text-primary font-dm text-sm">Bahasa</p>
-              <p className="text-text-muted text-xs font-dm">Bahasa Malaysia</p>
-            </div>
-            <ChevronRight size={16} className="text-text-muted" />
-          </div>
+          <div
+            style={{
+              background: "#111111",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "10px",
+              overflow: "hidden",
+            }}
+          >
+            {/* Reminder days */}
+            <SettingRow
+              icon={<Bell size={16} />}
+              label="Peringatan"
+              sublabel="Hantar sebelum tarikh akhir"
+              right={
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setReminderDays((d) => Math.max(1, d - 1))}
+                    className="w-7 h-7 rounded-full flex items-center justify-center font-dm active:scale-[0.88]"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#6d6d6d",
+                      fontSize: "16px",
+                      lineHeight: 1,
+                      transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
+                    }}
+                  >
+                    −
+                  </button>
+                  <span
+                    className="font-clash font-bold text-frost"
+                    style={{ fontSize: "14px", minWidth: "28px", textAlign: "center" }}
+                  >
+                    {reminderDays}h
+                  </span>
+                  <button
+                    onClick={() => setReminderDays((d) => Math.min(14, d + 1))}
+                    className="w-7 h-7 rounded-full flex items-center justify-center font-dm active:scale-[0.88]"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#6d6d6d",
+                      fontSize: "16px",
+                      lineHeight: 1,
+                      transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+              }
+            />
 
-          {/* WA notifications */}
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-white/6">
-            <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-              <MessageSquare size={15} className="text-success" />
-            </div>
-            <div className="flex-1">
-              <p className="text-text-primary font-dm text-sm">Notifikasi WhatsApp</p>
-              <p className="text-text-muted text-xs font-dm">Hantar peringatan auto</p>
-            </div>
-            <button
-              onClick={() => setWaNotif((v) => !v)}
-              className={`w-12 h-6 rounded-pill transition-colors relative ${
-                waNotif ? "bg-success" : "bg-bg-primary border border-white/10"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
-                  waNotif ? "left-6" : "left-0.5"
-                }`}
-              />
-            </button>
-          </div>
+            {/* Language */}
+            <SettingRow
+              icon={<Globe size={16} />}
+              label="Bahasa"
+              sublabel="Bahasa Malaysia"
+              right={<ChevronRight size={15} style={{ color: "#6d6d6d" }} />}
+            />
 
-          {/* Privacy */}
-          <div className="flex items-center gap-3 px-4 py-4">
-            <div className="w-8 h-8 rounded-full bg-bg-primary flex items-center justify-center shrink-0">
-              <Shield size={15} className="text-text-muted" />
-            </div>
-            <div className="flex-1">
-              <p className="text-text-primary font-dm text-sm">Privasi & Keselamatan</p>
-              <p className="text-text-muted text-xs font-dm">Data dan akaun</p>
-            </div>
-            <ChevronRight size={16} className="text-text-muted" />
+            {/* WA notifications toggle */}
+            <SettingRow
+              icon={<MessageSquare size={16} />}
+              label="Notifikasi WhatsApp"
+              sublabel="Hantar peringatan auto"
+              right={
+                <button
+                  onClick={() => setWaNotif((v) => !v)}
+                  className="shrink-0"
+                  style={{
+                    width: "44px",
+                    height: "24px",
+                    borderRadius: "99px",
+                    background: waNotif ? "#ffffff" : "rgba(255,255,255,0.08)",
+                    border: waNotif ? "none" : "1px solid rgba(255,255,255,0.12)",
+                    position: "relative",
+                    transition: "background 250ms cubic-bezier(0.23,1,0.32,1)",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "2px",
+                      left: waNotif ? "22px" : "2px",
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "50%",
+                      background: waNotif ? "#000000" : "#6d6d6d",
+                      transition: "left 250ms cubic-bezier(0.23,1,0.32,1)",
+                    }}
+                  />
+                </button>
+              }
+            />
+
+            {/* Privacy */}
+            <SettingRow
+              icon={<Shield size={16} />}
+              label="Privasi & Keselamatan"
+              sublabel="Data dan akaun"
+              right={<ChevronRight size={15} style={{ color: "#6d6d6d" }} />}
+              border={false}
+            />
           </div>
         </motion.div>
 
-        {/* Log out */}
+        {/* ── LOGOUT ────────────────────────────────────────────────────── */}
         <motion.button
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0.16, ease: [0.23, 1, 0.32, 1] }}
           onClick={handleLogout}
           disabled={loggingOut}
-          className="flex items-center justify-center gap-2 bg-danger/10 border border-danger/30 text-danger font-dm font-semibold py-4 rounded-btn text-sm disabled:opacity-60"
+          className="flex items-center justify-center gap-2 font-dm font-medium text-sm w-full active:scale-[0.97] disabled:opacity-50"
+          style={{
+            border: "1px solid rgba(239,68,68,0.25)",
+            borderRadius: "75.024px",
+            padding: "14px 0",
+            color: "#ef4444",
+            background: "transparent",
+            transition: "transform 160ms cubic-bezier(0.23,1,0.32,1), opacity 200ms",
+          }}
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           {loggingOut ? "Sedang keluar..." : "Log Keluar"}
         </motion.button>
 
-        <p className="text-center text-text-muted text-xs font-dm pb-2">
+        {/* Footer */}
+        <p className="text-center font-dm pb-2" style={{ fontSize: "11px", color: "#3a3a3a" }}>
           BayarLah v1.0 · Settle hutang, tanpa drama.
         </p>
       </div>
+    </div>
+  );
+}
+
+// ─── Section label with optional right slot ────────────────────────────────
+function SectionLabel({
+  label,
+  children,
+}: {
+  label: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <span
+        className="font-dm uppercase"
+        style={{ fontSize: "10px", letterSpacing: "0.10em", color: "#6d6d6d" }}
+      >
+        {label}
+      </span>
+      {children}
     </div>
   );
 }

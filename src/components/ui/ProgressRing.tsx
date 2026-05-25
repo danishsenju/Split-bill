@@ -16,8 +16,8 @@ export default function ProgressRing({
   value,
   size = 80,
   strokeWidth = 6,
-  color = "#D4AF37",
-  bgColor = "rgba(255,255,255,0.08)",
+  color = "#E8B84B",
+  bgColor = "rgba(232,184,75,0.10)",
   label,
   sublabel,
 }: ProgressRingProps) {
@@ -53,7 +53,7 @@ export default function ProgressRing({
       {(label || sublabel) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {label && (
-            <span className="text-text-primary font-syne font-bold text-sm leading-none">
+            <span className="text-text-primary font-clash font-bold text-sm leading-none">
               {label}
             </span>
           )}

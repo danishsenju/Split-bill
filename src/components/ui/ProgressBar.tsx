@@ -12,8 +12,8 @@ interface ProgressBarProps {
 
 export default function ProgressBar({
   value,
-  color = "#D4AF37",
-  bgColor = "rgba(255,255,255,0.08)",
+  color = "#E8B84B",
+  bgColor = "rgba(232,184,75,0.10)",
   height = 6,
   className = "",
 }: ProgressBarProps) {
@@ -27,7 +27,7 @@ export default function ProgressBar({
         style={{ backgroundColor: color }}
         initial={{ width: 0 }}
         animate={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
       />
     </div>
   );
