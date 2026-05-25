@@ -77,7 +77,7 @@ export default function CreateBillClient() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1
-  const [category, setCategory] = useState(
+  const [category] = useState(
     decodeURIComponent(searchParams.get("category") ?? "")
   );
   const [title, setTitle] = useState("");
