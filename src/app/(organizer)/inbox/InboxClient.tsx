@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ActivityLog, ActivityType } from "@/types";
 import { formatTime } from "@/lib/utils";
+import Grainient from "@/components/ui/Grainient";
 
 type FilterType = "semua" | "flags" | "bayaran" | "reminder";
 
@@ -103,14 +104,46 @@ export default function InboxClient({ activities }: Props) {
 
       {/* ── STICKY HEADER ─────────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-10 px-5 pt-6 pb-4 md:top-[60px]"
+        className="sticky top-0 z-10 md:top-[60px] overflow-hidden"
         style={{
-          background: "rgba(0,0,0,0.92)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
+        {/* Grainient background */}
+        <div className="absolute inset-0 z-0">
+          <Grainient
+            color1="#20203a"
+            color2="#3e21b3"
+            color3="#1a396d"
+            timeSpeed={0.6}
+            colorBalance={0.0}
+            warpStrength={1.0}
+            warpFrequency={5.0}
+            warpSpeed={2.0}
+            warpAmplitude={50.0}
+            blendAngle={0.0}
+            blendSoftness={0.05}
+            rotationAmount={500.0}
+            noiseScale={2.0}
+            grainAmount={0.1}
+            grainScale={2.0}
+            grainAnimated={false}
+            contrast={1.5}
+            gamma={1.0}
+            saturation={1.0}
+            centerX={0.0}
+            centerY={0.0}
+            zoom={0.9}
+          />
+          {/* Dark overlay so text stays readable */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(2px)" }}
+          />
+        </div>
+
+        {/* Header content sits above the canvas */}
+        <div className="relative z-10 px-5 pt-6 pb-4">
         {/* Title row */}
         <div className="flex items-end justify-between mb-4">
           <h1
@@ -167,6 +200,7 @@ export default function InboxClient({ activities }: Props) {
               {FILTER_LABELS[f]}
             </button>
           ))}
+        </div>
         </div>
       </header>
 

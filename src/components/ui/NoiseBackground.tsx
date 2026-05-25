@@ -29,7 +29,7 @@ function GradientLayer({
 }) {
   const x = useTransform(springX, (val) => val * multiplier);
   const y = useTransform(springY, (val) => val * multiplier);
-  const background = useMotionTemplate`radial-gradient(circle at ${x}px ${y}px, ${gradientColor} 0%, transparent 60%)`;
+  const background = useMotionTemplate`radial-gradient(circle at ${x}px ${y}px, ${gradientColor} 0%, transparent 75%)`;
 
   return (
     <motion.div
@@ -57,7 +57,7 @@ export const NoiseBackground = ({
     "rgb(212, 175, 55)",
     "rgb(0, 208, 132)",
   ],
-  speed = 0.06,
+  speed = 0.025,
   animating = true,
 }: NoiseBackgroundProps) => {
   const containerRef = useRef<HTMLDivElement>(null);

@@ -267,7 +267,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                 </div>
                 <p className="font-dm text-whisper text-sm">Tiada kaedah pembayaran</p>
                 <Link
-                  href="/auth/register"
+                  href="/profile/payment"
                   className="font-dm font-semibold text-sm active:scale-[0.97]"
                   style={{
                     background: "var(--gradient-deep-ocean)",

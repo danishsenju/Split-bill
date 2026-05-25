@@ -4,8 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+
+const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE_OUT } },
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,125 +40,186 @@ export default function LoginPage() {
     router.refresh();
   }
 
-  const features = [
-    "Split bil mudah dengan rakan",
-    "Realtime tracking bayaran",
-    "Link peribadi setiap ahli",
-  ];
-
   return (
-    <div
-      className="min-h-dvh bg-bg-primary md:flex"
-      style={{
-        background: "radial-gradient(ellipse at 50% 30%, rgba(232,184,75,0.06) 0%, transparent 70%), var(--color-bg-primary)",
-      }}
-    >
-      {/* Desktop left panel */}
-      <div className="hidden md:flex flex-col justify-center px-16 py-12 bg-bg-surface md:w-[420px] lg:w-[480px] shrink-0">
-        <h1 className="font-clash font-bold text-5xl text-text-primary tracking-tight mb-2">
-          Bayar<span className="text-accent">Lah</span>
-        </h1>
-        <p className="text-text-secondary font-dm text-base mb-10">
-          Settle hutang, tanpa drama.
-        </p>
-        <div className="flex flex-col gap-4">
-          {features.map((f) => (
-            <div key={f} className="flex items-center gap-3">
-              <CheckCircle size={18} className="text-success shrink-0" />
-              <span className="text-text-secondary font-dm text-sm">{f}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="min-h-dvh bg-midnight relative overflow-hidden flex items-center justify-center px-5 py-12">
+      {/* Atmospheric orbs — depth without shadows */}
+      <div
+        className="absolute top-[-15%] left-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none orb-animate"
+        style={{ background: "rgb(160, 224, 171)", opacity: 0.16, filter: "blur(130px)" }}
+      />
+      <div
+        className="absolute bottom-[-20%] right-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none orb-animate-slow"
+        style={{ background: "rgb(255, 140, 40)", opacity: 0.13, filter: "blur(130px)" }}
+      />
+      <div
+        className="absolute top-[45%] right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none"
+        style={{ background: "rgb(165, 45, 37)", opacity: 0.09, filter: "blur(100px)" }}
+      />
 
-      {/* Right / mobile form panel */}
-      <div className="flex-1 flex items-center justify-center px-5 py-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: EASE_OUT }}
+        className="w-full max-w-sm relative z-10"
+      >
+        {/* Logo */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          className="mb-10 text-center"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="w-full max-w-sm"
+          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.05 }}
         >
-          {/* Mobile-only logo */}
-          <div className="mb-10 text-center md:hidden">
-            <h1 className="font-clash font-bold text-4xl text-text-primary tracking-tight">
-              Bayar<span className="text-accent">Lah</span>
-            </h1>
-            <p className="text-text-secondary font-dm text-sm mt-2">
-              Settle hutang, tanpa drama.
-            </p>
-          </div>
-
-          <div className="accent-border rounded-card p-6">
-            <h2 className="font-clash font-bold text-xl text-text-primary mb-6">Log Masuk</h2>
-
-            <form onSubmit={handleLogin} className="flex flex-col gap-4">
-              <div>
-                <label className="text-text-secondary text-xs font-dm mb-1.5 block">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@email.com"
-                  required
-                  className="w-full bg-bg-surface border border-[rgba(232,184,75,0.15)] rounded-input px-4 py-3 text-text-primary font-dm text-sm placeholder:text-text-muted focus:border-accent/50 transition-colors"
-                  style={{ transition: "border-color 150ms var(--ease-out)" }}
-                />
-              </div>
-
-              <div>
-                <label className="text-text-secondary text-xs font-dm mb-1.5 block">Kata Laluan</label>
-                <div className="relative">
-                  <input
-                    type={showPw ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    className="w-full bg-bg-surface border border-[rgba(232,184,75,0.15)] rounded-input px-4 py-3 pr-12 text-text-primary font-dm text-sm placeholder:text-text-muted focus:border-accent/50 transition-colors"
-                    style={{ transition: "border-color 150ms var(--ease-out)" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
-                  >
-                    {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                  className="text-danger text-sm font-dm bg-danger/10 px-3 py-2 rounded-input border border-danger/20"
-                >
-                  {error}
-                </motion.p>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 w-full bg-accent text-bg-primary font-dm font-semibold py-3.5 rounded-btn text-sm flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.97]"
-                style={{ transition: "transform 160ms var(--ease-out), opacity 200ms" }}
-              >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                Log Masuk
-              </button>
-            </form>
-          </div>
-
-          <p className="text-center text-text-muted text-sm font-dm mt-5">
-            Belum ada akaun?{" "}
-            <Link href="/auth/register" className="text-accent hover:underline transition-colors">
-              Daftar di sini
-            </Link>
+          <h1 className="text-4xl font-bold tracking-tight mb-2">
+            <span
+              style={{
+                background: "var(--gradient-deep-ocean)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              BayarLah
+            </span>
+          </h1>
+          <p className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>
+            Settle hutang, tanpa drama.
           </p>
         </motion.div>
-      </div>
+
+        {/* Glass card */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.1 }}
+          className="rounded-[10px] p-7"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            backdropFilter: "blur(24px)",
+          }}
+        >
+          <h2 className="text-frost text-lg font-semibold mb-6">Log Masuk</h2>
+
+          <motion.form
+            onSubmit={handleLogin}
+            className="flex flex-col gap-4"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } } }}
+          >
+            <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
+              <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Email</label>
+              <InputField
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@email.com"
+                required
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
+              <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Kata Laluan</label>
+              <div className="relative">
+                <InputField
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  extraPaddingRight
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-90"
+                  style={{ color: "#fff", transition: "opacity 150ms var(--ease-out)" }}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </motion.div>
+
+            {error && (
+              <motion.p
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2, ease: EASE_OUT }}
+                className="text-sm px-3 py-2 rounded-[10px]"
+                style={{
+                  color: "#FF6B6B",
+                  background: "rgba(255,107,107,0.1)",
+                  border: "1px solid rgba(255,107,107,0.2)",
+                }}
+              >
+                {error}
+              </motion.p>
+            )}
+
+            <motion.button
+              variants={itemVariants}
+              type="submit"
+              disabled={loading}
+              className="mt-1 w-full py-3.5 rounded-pill-btn text-sm font-semibold text-midnight flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.97]"
+              style={{
+                background: "var(--gradient-deep-ocean)",
+                transition: "transform 160ms var(--ease-out), opacity 200ms",
+              }}
+            >
+              {loading && <Loader2 size={16} className="animate-spin" />}
+              Log Masuk
+            </motion.button>
+          </motion.form>
+        </motion.div>
+
+        <p className="text-center text-sm mt-5" style={{ color: "var(--color-whisper-gray)" }}>
+          Belum ada akaun?{" "}
+          <Link
+            href="/auth/register"
+            className="text-frost underline-offset-2 hover:underline"
+            style={{ transition: "opacity 150ms" }}
+          >
+            Daftar di sini
+          </Link>
+        </p>
+      </motion.div>
     </div>
+  );
+}
+
+function InputField({
+  type,
+  value,
+  onChange,
+  placeholder,
+  required,
+  extraPaddingRight,
+}: {
+  type: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+  required?: boolean;
+  extraPaddingRight?: boolean;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      className={`w-full rounded-[10px] px-4 py-3 text-frost text-sm ${extraPaddingRight ? "pr-12" : ""}`}
+      style={{
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        outline: "none",
+        color: "#ffffff",
+        caretColor: "var(--gradient-deep-ocean, #a0e0ab)",
+        transition: "border-color 150ms var(--ease-out)",
+      }}
+      onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
+      onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+    />
   );
 }
