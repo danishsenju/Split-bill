@@ -62,7 +62,7 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
     <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "112px" }}>
 
       {/* ── HEADER + SEARCH ─────────────────────────────────────────────── */}
-      <div className="px-5 pt-7 pb-5">
+      <div className="px-5 pb-5" style={{ paddingTop: "calc(env(safe-area-inset-top) + 28px)" }}>
         {/* Page title */}
         <motion.h1
           initial={{ opacity: 0, y: 12 }}

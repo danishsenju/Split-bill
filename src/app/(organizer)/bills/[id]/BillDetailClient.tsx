@@ -118,8 +118,8 @@ export default function BillDetailClient({
 
         {/* Sticky header */}
         <div
-          className="sticky top-0 z-20 flex items-center gap-3 px-4 pt-4 pb-3 md:top-[60px]"
-          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(20px)" }}
+          className="sticky top-0 z-20 flex items-center gap-3 px-4 pb-3 md:top-[60px]"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(20px)", paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
         >
           <button
             onClick={() => router.back()}

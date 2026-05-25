@@ -153,7 +153,7 @@ export default function InboxClient({ activities }: Props) {
         </div>
 
         {/* Header content sits above the canvas */}
-        <div className="relative z-10 px-5 pt-6 pb-4">
+        <div className="relative z-10 px-5 pb-4" style={{ paddingTop: "calc(env(safe-area-inset-top) + 24px)" }}>
         {/* Title row */}
         <div className="flex items-end justify-between mb-4">
           <h1

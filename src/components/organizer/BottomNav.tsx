@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Receipt, Plus, Inbox, User, ArrowRight } from "lucide-react";
 import { useLang, navT } from "@/lib/language-context";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { NoiseBackground } from "@/components/ui/NoiseBackground";
 
 const CATEGORIES = [
   { key: "🍽️ Makan",     label: "Food" },
@@ -178,9 +179,8 @@ export default function BottomNav() {
                   {CATEGORIES.map(({ key, label }, i) => {
                     const isSelected = selected === key;
                     return (
-                      <motion.button
+                      <motion.div
                         key={key}
-                        onClick={() => setSelected(key)}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
@@ -189,31 +189,31 @@ export default function BottomNav() {
                           ease: [0.23, 1, 0.32, 1],
                         }}
                         whileTap={{ scale: 0.94 }}
-                        className="flex flex-col items-center gap-2 py-3 px-1"
-                        style={{
-                          borderRadius: "14px",
-                          border: isSelected
-                            ? "1.5px solid rgba(212,175,55,0.7)"
-                            : "1.5px solid rgba(255,255,255,0.06)",
-                          background: isSelected
-                            ? "rgba(212,175,55,0.08)"
-                            : "rgba(255,255,255,0.03)",
-                          transition:
-                            "background 150ms cubic-bezier(0.23,1,0.32,1), border-color 150ms cubic-bezier(0.23,1,0.32,1)",
-                        }}
+                        onClick={() => setSelected(key)}
+                        className="cursor-pointer"
                       >
-                        <CategoryIcon category={key} size={28} />
-                        <span
-                          className="font-dm leading-none text-center"
-                          style={{
-                            fontSize: "10px",
-                            color: isSelected ? "#D4AF37" : "#8B9E88",
-                            transition: "color 150ms cubic-bezier(0.23,1,0.32,1)",
-                          }}
+                        <NoiseBackground
+                          borderRadius="14px"
+                          gradientColors={
+                            isSelected
+                              ? ["rgb(10,30,80)", "rgb(15,50,120)", "rgb(20,70,160)"]
+                              : ["rgb(5,15,50)", "rgb(10,30,80)", "rgb(15,50,120)"]
+                          }
+                          speed={isSelected ? 0.04 : 0.02}
+                          className="flex flex-col items-center gap-2 py-3 px-1"
                         >
-                          {label}
-                        </span>
-                      </motion.button>
+                          <CategoryIcon category={key} size={28} />
+                          <span
+                            className="font-dm leading-none text-center"
+                            style={{
+                              fontSize: "10px",
+                              color: isSelected ? "#D4AF37" : "#8B9E88",
+                            }}
+                          >
+                            {label}
+                          </span>
+                        </NoiseBackground>
+                      </motion.div>
                     );
                   })}
                 </div>

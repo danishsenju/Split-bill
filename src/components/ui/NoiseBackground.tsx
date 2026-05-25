@@ -46,6 +46,7 @@ interface NoiseBackgroundProps {
   gradientColors?: string[];
   speed?: number;
   animating?: boolean;
+  borderRadius?: string;
 }
 
 export const NoiseBackground = ({
@@ -59,6 +60,7 @@ export const NoiseBackground = ({
   ],
   speed = 0.025,
   animating = true,
+  borderRadius = "10px",
 }: NoiseBackgroundProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
@@ -120,12 +122,14 @@ export const NoiseBackground = ({
     y.set(newY);
   });
 
+  const innerRadius = `calc(${borderRadius} - ${BORDER_WIDTH}px)`;
+
   return (
     // Outer shell — animated gradient fills this, visible only as the border gap
     <div
       ref={containerRef}
-      className={cn("relative rounded-[10px] overflow-hidden", containerClassName)}
-      style={{ padding: `${BORDER_WIDTH}px`, background: "#1a1a1a" }}
+      className={cn("relative overflow-hidden", containerClassName)}
+      style={{ padding: `${BORDER_WIDTH}px`, background: "#1a1a1a", borderRadius }}
     >
       {/* Animated gradient layers — form the glowing border */}
       <GradientLayer springX={springX} springY={springY} gradientColor={gradientColors[0]} opacity={0.9} multiplier={1} />
@@ -134,8 +138,8 @@ export const NoiseBackground = ({
 
       {/* Inner card — solid bg, sits on top revealing only the 2px gradient border */}
       <div
-        className={cn("relative z-10 rounded-[8px]", className)}
-        style={{ background: "#111111" }}
+        className={cn("relative z-10", className)}
+        style={{ background: "#111111", borderRadius: innerRadius }}
       >
         {children}
       </div>

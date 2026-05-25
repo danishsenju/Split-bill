@@ -88,7 +88,8 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-        className="relative overflow-hidden flex flex-col items-center pt-10 pb-8 px-5"
+        className="relative overflow-hidden flex flex-col items-center pb-8 px-5"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 40px)" }}
         style={{ background: "#000000" }}
       >
         {/* Aurora WebGL background */}
