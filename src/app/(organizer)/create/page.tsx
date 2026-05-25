@@ -10,11 +10,5 @@ export default async function CreateBillPage() {
 
   if (!user) redirect("/auth/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  return <CreateBillClient profile={profile} />;
+  return <CreateBillClient />;
 }

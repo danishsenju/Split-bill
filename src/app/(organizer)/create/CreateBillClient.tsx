@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { Profile, ScanResult } from "@/types";
+import { ScanResult } from "@/types";
 import { generatePayCode } from "@/lib/paycode";
 import { formatRM } from "@/lib/utils";
 import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
@@ -32,10 +32,6 @@ const CATEGORIES = [
 interface Member {
   name: string;
   phone: string;
-}
-
-interface Props {
-  profile: Profile | null;
 }
 
 // Shared base style for all text inputs / textareas
@@ -85,7 +81,7 @@ function ErrorBox({ errors }: { errors: string[] }) {
   );
 }
 
-export default function CreateBillClient(_props: Props) {
+export default function CreateBillClient() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
