@@ -18,7 +18,7 @@ import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { getInitial, maskAccount, formatRM } from "@/lib/utils";
 import Aurora from "@/components/ui/Aurora";
-import { useLang } from "@/lib/language-context";
+import { useLang, profileT } from "@/lib/language-context";
 
 interface Props {
   profile: Profile | null;
@@ -64,6 +64,7 @@ function SettingRow({
 export default function ProfileClient({ profile, billCount, totalCollected }: Props) {
   const router = useRouter();
   const { lang, setLang } = useLang();
+  const t = profileT[lang];
   const [loggingOut, setLoggingOut] = useState(false);
   const [reminderDays, setReminderDays] = useState(3);
   const [waNotif, setWaNotif] = useState(true);
@@ -146,7 +147,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
               {billCount}
             </p>
             <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>
-              Bil Dibuat
+              {t.statBillsMade}
             </p>
           </div>
           <div className="flex flex-col items-center gap-1 py-4" style={{ background: "#111111" }}>
@@ -163,7 +164,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
               {formatRM(totalCollected)}
             </p>
             <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>
-              Terkumpul
+              {t.statCollected}
             </p>
           </div>
         </div>
@@ -180,13 +181,13 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, ease: [0.23, 1, 0.32, 1] }}
         >
-          <SectionLabel label="Kaedah Pembayaran">
+          <SectionLabel label={t.sectionPayment}>
             <Link
               href="/auth/register"
               className="font-dm text-whisper active:opacity-50"
               style={{ fontSize: "12px", transition: "opacity 150ms" }}
             >
-              Tukar →
+              {t.changeBtn}
             </Link>
           </SectionLabel>
 
@@ -238,7 +239,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                       padding: "2px 8px",
                     }}
                   >
-                    Aktif
+                    {t.active}
                   </span>
                 </div>
                 <div
@@ -267,7 +268,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                 >
                   <CreditCard size={20} style={{ color: "#6d6d6d" }} />
                 </div>
-                <p className="font-dm text-whisper text-sm">Tiada kaedah pembayaran</p>
+                <p className="font-dm text-whisper text-sm">{t.noPayment}</p>
                 <Link
                   href="/profile/payment"
                   className="font-dm font-semibold text-sm active:scale-[0.97]"
@@ -279,7 +280,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                     transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
                   }}
                 >
-                  Tambah sekarang
+                  {t.addNow}
                 </Link>
               </div>
             )}
@@ -292,7 +293,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12, ease: [0.23, 1, 0.32, 1] }}
         >
-          <SectionLabel label="Tetapan" />
+          <SectionLabel label={t.sectionSettings} />
 
           <div
             style={{
@@ -305,8 +306,8 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
             {/* Reminder days */}
             <SettingRow
               icon={<Bell size={16} />}
-              label="Peringatan"
-              sublabel="Hantar sebelum tarikh akhir"
+              label={t.reminderLabel}
+              sublabel={t.reminderSub}
               right={
                 <div className="flex items-center gap-2 shrink-0">
                   <button
@@ -327,7 +328,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                     className="font-clash font-bold text-frost"
                     style={{ fontSize: "14px", minWidth: "28px", textAlign: "center" }}
                   >
-                    {reminderDays}h
+                    {reminderDays}{t.reminderUnit}
                   </span>
                   <button
                     onClick={() => setReminderDays((d) => Math.min(14, d + 1))}
@@ -350,7 +351,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
             {/* Language */}
             <SettingRow
               icon={<Globe size={16} />}
-              label="Bahasa / Language"
+              label={t.langLabel}
               sublabel={lang === "bm" ? "Bahasa Malaysia" : "English"}
               right={
                 <div className="flex items-center gap-1 shrink-0">
@@ -379,8 +380,8 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
             {/* WA notifications toggle */}
             <SettingRow
               icon={<MessageSquare size={16} />}
-              label="Notifikasi WhatsApp"
-              sublabel="Hantar peringatan auto"
+              label={t.waLabel}
+              sublabel={t.waSub}
               right={
                 <button
                   onClick={() => setWaNotif((v) => !v)}
@@ -414,8 +415,8 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
             {/* Privacy */}
             <SettingRow
               icon={<Shield size={16} />}
-              label="Privasi & Keselamatan"
-              sublabel="Data dan akaun"
+              label={t.privacyLabel}
+              sublabel={t.privacySub}
               right={<ChevronRight size={15} style={{ color: "#6d6d6d" }} />}
               border={false}
             />
@@ -440,7 +441,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
           }}
         >
           <LogOut size={15} />
-          {loggingOut ? "Sedang keluar..." : "Log Keluar"}
+          {loggingOut ? t.loggingOut : t.logout}
         </motion.button>
 
         {/* Footer */}

@@ -13,6 +13,7 @@ import WAToneSelector from "@/components/organizer/WAToneSelector";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { NoiseBackground } from "@/components/ui/NoiseBackground";
 import Link from "next/link";
+import { useLang, createT } from "@/lib/language-context";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
@@ -53,11 +54,11 @@ const focusBorder = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
 const blurBorder = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
   (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)");
 
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
+function FieldLabel({ children, optional, optionalText = "(pilihan)" }: { children: React.ReactNode; optional?: boolean; optionalText?: string }) {
   return (
     <p className="font-dm mb-2" style={{ fontSize: "12px", color: "#6d6d6d", letterSpacing: "0.04em" }}>
       {children}
-      {optional && <span style={{ color: "#3a3a3a" }}> (pilihan)</span>}
+      {optional && <span style={{ color: "#3a3a3a" }}> {optionalText}</span>}
     </p>
   );
 }
@@ -83,6 +84,8 @@ function ErrorBox({ errors }: { errors: string[] }) {
 
 export default function CreateBillClient() {
   const router = useRouter();
+  const { lang } = useLang();
+  const t = createT[lang];
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1
@@ -111,13 +114,13 @@ export default function CreateBillClient() {
 
   function validateStep1(): boolean {
     const errs: string[] = [];
-    if (!category) errs.push("Pilih kategori bil");
-    if (!title.trim()) errs.push("Tajuk bil diperlukan");
-    if (!dueDate) errs.push("Tarikh akhir diperlukan");
+    if (!category) errs.push(t.errCategory);
+    if (!title.trim()) errs.push(t.errTitle);
+    if (!dueDate) errs.push(t.errDueDate);
     if (splitMode === "equal" && (!totalAmount || isNaN(Number(totalAmount)) || Number(totalAmount) <= 0))
-      errs.push("Masukkan jumlah bil yang sah");
+      errs.push(t.errAmount);
     if (splitMode === "scan" && !scanResult)
-      errs.push("Sila imbas resit terlebih dahulu");
+      errs.push(t.errScan);
     setErrors(errs);
     return errs.length === 0;
   }
@@ -125,7 +128,7 @@ export default function CreateBillClient() {
   function validateStep2(): boolean {
     const errs: string[] = [];
     if (!members.some((m) => m.name.trim()))
-      errs.push("Tambah sekurang-kurangnya satu ahli");
+      errs.push(t.errMember);
     setErrors(errs);
     return errs.length === 0;
   }
@@ -208,10 +211,10 @@ export default function CreateBillClient() {
           </button>
         )}
         <h1 className="font-clash font-bold text-frost flex-1 leading-none" style={{ fontSize: "18px" }}>
-          {step === 1 ? "Buat Bil Baru" : step === 2 ? "Tambah Ahli" : "Bil Berjaya Dibuat!"}
+          {step === 1 ? t.step1Title : step === 2 ? t.step2Title : t.step3Title}
         </h1>
         {step < 3 && (
-          <span className="font-dm text-whisper shrink-0" style={{ fontSize: "12px" }}>{step}/2</span>
+          <span className="font-dm text-whisper shrink-0" style={{ fontSize: "12px" }}>{t.stepIndicator(step)}</span>
         )}
       </header>
 
@@ -242,7 +245,7 @@ export default function CreateBillClient() {
           >
             {/* Category — 4×2 grid */}
             <div>
-              <FieldLabel>Kategori</FieldLabel>
+              <FieldLabel>{t.labelCategory}</FieldLabel>
               <div className="grid grid-cols-4 gap-2">
                 {CATEGORIES.map((cat) => {
                   const sel = category === cat;
@@ -266,7 +269,7 @@ export default function CreateBillClient() {
                           transition: "color 150ms cubic-bezier(0.23,1,0.32,1)",
                         }}
                       >
-                        {cat.replace(/^\S+\s*/, "")}
+                        {t.categoryLabels[cat] ?? cat.replace(/^\S+\s*/, "")}
                       </span>
                     </>
                   );
@@ -318,11 +321,11 @@ export default function CreateBillClient() {
 
             {/* Title */}
             <div>
-              <FieldLabel>Tajuk Bil</FieldLabel>
+              <FieldLabel>{t.labelTitle}</FieldLabel>
               <input
                 type="text" value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="cth: Makan Malam Geng Office"
+                placeholder={lang === "en" ? "e.g. Dinner with the Gang" : "cth: Makan Malam Geng Office"}
                 className="font-dm" style={fieldBase}
                 onFocus={focusBorder} onBlur={blurBorder}
               />
@@ -330,10 +333,10 @@ export default function CreateBillClient() {
 
             {/* Description */}
             <div>
-              <FieldLabel optional>Penerangan</FieldLabel>
+              <FieldLabel optional optionalText={t.optional}>{t.labelDesc}</FieldLabel>
               <textarea
                 value={description} onChange={(e) => setDescription(e.target.value)}
-                placeholder="Nota tambahan..." rows={3}
+                placeholder={lang === "en" ? "Additional notes..." : "Nota tambahan..."} rows={3}
                 className="font-dm resize-none"
                 style={{ ...fieldBase, lineHeight: 1.5 }}
                 onFocus={focusBorder} onBlur={blurBorder}
@@ -342,7 +345,7 @@ export default function CreateBillClient() {
 
             {/* Due date */}
             <div>
-              <FieldLabel>Tarikh Akhir</FieldLabel>
+              <FieldLabel>{t.labelDueDate}</FieldLabel>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar
                   value={dueDate ? dayjs(dueDate) : null}
@@ -379,14 +382,14 @@ export default function CreateBillClient() {
               </LocalizationProvider>
               {dueDate && (
                 <p className="font-dm text-xs mt-1" style={{ color: "#8B9E88" }}>
-                  Dipilih: {dayjs(dueDate).format("DD MMM YYYY")}
+                  {t.dateSelected(dayjs(dueDate).format("DD MMM YYYY"))}
                 </p>
               )}
             </div>
 
             {/* Split mode — 2-card grid */}
             <div>
-              <FieldLabel>Cara Bahagi</FieldLabel>
+              <FieldLabel>{t.labelSplitMode}</FieldLabel>
               <div className="grid grid-cols-2 gap-3">
                 {(["equal", "scan"] as const).map((mode) => {
                   const sel = splitMode === mode;
@@ -405,10 +408,10 @@ export default function CreateBillClient() {
                       <span style={{ fontSize: "20px" }}>{mode === "equal" ? "⚖️" : "📷"}</span>
                       <div>
                         <p className="font-dm font-semibold" style={{ fontSize: "13px", color: sel ? "#ffffff" : "#6d6d6d" }}>
-                          {mode === "equal" ? "Sama Rata" : "Scan Resit"}
+                          {mode === "equal" ? t.splitEqualLabel : t.splitScanLabel}
                         </p>
                         <p className="font-dm mt-0.5" style={{ fontSize: "11px", color: "#4a4a4a", lineHeight: 1.4 }}>
-                          {mode === "equal" ? "Bahagi sama untuk semua" : "Imbas & perinci setiap item"}
+                          {mode === "equal" ? t.splitEqualDesc : t.splitScanDesc}
                         </p>
                       </div>
                     </button>
@@ -425,7 +428,7 @@ export default function CreateBillClient() {
                 className="flex flex-col gap-4 overflow-hidden"
               >
                 <div>
-                  <FieldLabel>Jumlah Bil (RM)</FieldLabel>
+                  <FieldLabel>{t.labelAmount}</FieldLabel>
                   <input
                     type="number" inputMode="decimal" value={totalAmount}
                     onChange={(e) => setTotalAmount(e.target.value)}
@@ -434,7 +437,7 @@ export default function CreateBillClient() {
                   />
                 </div>
                 <div>
-                  <FieldLabel optional>Cukai / SST (RM)</FieldLabel>
+                  <FieldLabel optional optionalText={t.optional}>{t.labelTax}</FieldLabel>
                   <input
                     type="number" inputMode="decimal" value={tax}
                     onChange={(e) => setTax(e.target.value)}
@@ -478,7 +481,7 @@ export default function CreateBillClient() {
                       className="font-dm text-whisper active:opacity-50"
                       style={{ fontSize: "13px", transition: "opacity 150ms" }}
                     >
-                      Imbas semula
+                      {t.rescanBtn}
                     </button>
                   </div>
                 )}
@@ -499,7 +502,7 @@ export default function CreateBillClient() {
                 transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
               }}
             >
-              Seterusnya <ArrowRight size={16} />
+              {t.nextBtn} <ArrowRight size={16} />
             </button>
           </motion.div>
         )}
@@ -527,14 +530,14 @@ export default function CreateBillClient() {
                 }}
               >
                 <div className="flex flex-col gap-1 p-4" style={{ background: "#111111" }}>
-                  <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>Jumlah bil</p>
+                  <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>{t.totalBill}</p>
                   <p className="font-clash font-bold text-frost" style={{ fontSize: "20px" }}>
                     {formatRM(computedBillTotal)}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1 p-4" style={{ background: "#111111" }}>
                   <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>
-                    {validMemberCount} ahli · setiap seorang
+                    {t.perPerson(validMemberCount)}
                   </p>
                   <p
                     className="font-clash font-bold"
@@ -564,7 +567,7 @@ export default function CreateBillClient() {
                   style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
                 >
                   <div className="flex items-center justify-between">
-                    <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>Ahli {idx + 1}</p>
+                    <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>{t.memberLabel(idx + 1)}</p>
                     {members.length > 1 && (
                       <button
                         onClick={() => removeMember(idx)}
@@ -578,14 +581,14 @@ export default function CreateBillClient() {
                   <input
                     type="text" value={member.name}
                     onChange={(e) => updateMember(idx, "name", e.target.value)}
-                    placeholder="Nama ahli" className="font-dm"
+                    placeholder={t.placeholderName} className="font-dm"
                     style={{ ...fieldBase, background: "rgba(255,255,255,0.03)" }}
                     onFocus={focusBorder} onBlur={blurBorder}
                   />
                   <input
                     type="tel" value={member.phone}
                     onChange={(e) => updateMember(idx, "phone", e.target.value)}
-                    placeholder="No. telefon (pilihan)" className="font-dm"
+                    placeholder={t.placeholderPhone} className="font-dm"
                     style={{ ...fieldBase, background: "rgba(255,255,255,0.03)" }}
                     onFocus={focusBorder} onBlur={blurBorder}
                   />
@@ -606,7 +609,7 @@ export default function CreateBillClient() {
                 transition: "color 150ms, border-color 150ms, transform 120ms",
               }}
             >
-              <Plus size={15} /> Tambah Ahli
+              <Plus size={15} /> {t.addMember}
             </button>
 
             {errors.length > 0 && <ErrorBox errors={errors} />}
@@ -625,9 +628,9 @@ export default function CreateBillClient() {
               }}
             >
               {creating ? (
-                <span className="animate-pulse">Sedang cipta bil...</span>
+                <span className="animate-pulse">{t.creating}</span>
               ) : (
-                <><Check size={16} /> Cipta Bil</>
+                <><Check size={16} /> {t.createBtn}</>
               )}
             </button>
           </motion.div>
@@ -667,7 +670,7 @@ export default function CreateBillClient() {
                 <div>
                   <h2 className="font-clash font-bold text-frost" style={{ fontSize: "20px" }}>{title}</h2>
                   <p className="font-dm text-whisper text-sm mt-1">
-                    Bil berjaya dicipta! Kongsi link kepada ahli-ahli.
+                    {t.successDesc}
                   </p>
                 </div>
               </div>
@@ -678,7 +681,7 @@ export default function CreateBillClient() {
               className="flex flex-col gap-2 p-4"
               style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
             >
-              <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>Pay Code</p>
+              <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>{t.payCodeLabel}</p>
               <PayCodeDisplay code={createdPayCode} />
             </div>
 
@@ -687,7 +690,7 @@ export default function CreateBillClient() {
               className="flex flex-col p-4 gap-3"
               style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
             >
-              <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>Link Peribadi Ahli</p>
+              <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>{t.memberLinksLabel}</p>
               {createdMembers.map((m, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div
@@ -731,7 +734,7 @@ export default function CreateBillClient() {
                 transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
               }}
             >
-              <span>📲</span> Hantar via WhatsApp
+              <span>📲</span> {t.whatsappBtn}
             </button>
 
             {showWA && (
@@ -761,7 +764,7 @@ export default function CreateBillClient() {
                 transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
               }}
             >
-              Pergi ke Dashboard
+              {t.dashboardBtn}
             </Link>
           </motion.div>
         )}

@@ -10,6 +10,7 @@ import { formatRM, formatDaysRemaining, getDaysRemaining, getInitial, formatTime
 import { buildWAUrl, buildWAMessage } from "@/lib/whatsapp";
 import Link from "next/link";
 import { NoiseBackground } from "@/components/ui/NoiseBackground";
+import { useLang, billDetailT } from "@/lib/language-context";
 
 // Emil: strong ease-out — starts fast, gives instant feedback on enter
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
@@ -33,6 +34,8 @@ export default function BillDetailClient({
   profile: Profile | null;
 }) {
   const router = useRouter();
+  const { lang } = useLang();
+  const t = billDetailT[lang];
   const [bill, setBill] = useState(initialBill);
   const [marking, setMarking] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -167,8 +170,8 @@ export default function BillDetailClient({
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-3 mb-5">
             {[
-              { label: "Terkumpul", value: formatRM(amountCollected), gradient: true },
-              { label: "Baki", value: formatRM(bill.total_amount - amountCollected), gradient: false },
+              { label: t.statCollected, value: formatRM(amountCollected), gradient: true },
+              { label: t.statRemaining, value: formatRM(bill.total_amount - amountCollected), gradient: false },
             ].map(({ label, value, gradient }, i) => (
               <motion.div
                 key={label}
@@ -224,7 +227,7 @@ export default function BillDetailClient({
             />
           </div>
           <p className="font-dm text-[11px] text-white/30 text-center">
-            {paidCount} / {totalCount} dah bayar
+            {t.paidProgress(paidCount, totalCount)}
           </p>
         </div>
       </div>
@@ -270,7 +273,7 @@ export default function BillDetailClient({
               onPointerLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
               <Copy size={12} />
-              {copied ? "Disalin!" : "Salin"}
+              {copied ? t.copiedBtn : t.copyBtn}
             </button>
           </NoiseBackground>
         </motion.div>
@@ -304,9 +307,9 @@ export default function BillDetailClient({
                   </motion.div>
                   <div>
                     <p className="font-dm text-sm font-semibold" style={{ color: "rgb(255,172,46)" }}>
-                      {flags.length} flag aktif
+                      {t.flagAlert(flags.length)}
                     </p>
-                    <p className="font-dm text-xs text-white/30">Tap untuk semak</p>
+                    <p className="font-dm text-xs text-white/30">{t.flagSub}</p>
                   </div>
                 </div>
               </Link>
@@ -331,14 +334,14 @@ export default function BillDetailClient({
           onPointerLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
           <Bell size={15} />
-          Hantar Peringatan Semua
+          {t.remindAll}
         </motion.button>
 
         {/* ── Unpaid members ── */}
         {unpaidMembers.length > 0 && (
           <div className="flex flex-col gap-2 mt-1">
             <p className="font-dm text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25 px-0.5">
-              Belum Bayar ({unpaidMembers.length})
+              {t.unpaidSection(unpaidMembers.length)}
             </p>
             {unpaidMembers.map((member, i) => (
               <motion.div
@@ -367,7 +370,7 @@ export default function BillDetailClient({
 
                 <div className="flex-1 min-w-0">
                   <p className="font-dm font-medium text-sm text-white truncate">{member.name}</p>
-                  <p className="font-dm text-xs text-white/30">{member.phone ?? "Tiada nombor"}</p>
+                  <p className="font-dm text-xs text-white/30">{member.phone ?? t.noPhone}</p>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -417,7 +420,7 @@ export default function BillDetailClient({
         {paidMembers.length > 0 && (
           <div className="flex flex-col gap-2 mt-1">
             <p className="font-dm text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25 px-0.5">
-              Dah Bayar ({paidMembers.length})
+              {t.paidSection(paidMembers.length)}
             </p>
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
               {paidMembers.map((member, i) => (
@@ -463,7 +466,7 @@ export default function BillDetailClient({
                     onPointerUp={(e) => (e.currentTarget.style.opacity = "1")}
                     onPointerLeave={(e) => (e.currentTarget.style.opacity = "1")}
                   >
-                    Batal
+                    {t.cancelPaid}
                   </button>
                 </motion.div>
               ))}

@@ -6,15 +6,9 @@ import Link from "next/link";
 import { ActivityLog, ActivityType } from "@/types";
 import { formatTime } from "@/lib/utils";
 import Grainient from "@/components/ui/Grainient";
+import { useLang, inboxT } from "@/lib/language-context";
 
-type FilterType = "semua" | "flags" | "bayaran" | "reminder";
-
-const FILTER_LABELS: Record<FilterType, string> = {
-  semua: "Semua",
-  flags: "Flags",
-  bayaran: "Bayaran",
-  reminder: "Reminder",
-};
+type FilterType = "all" | "flags" | "payments" | "reminders";
 
 // Dot color for the timeline indicator
 function getDotColor(type: ActivityType): string {
@@ -55,14 +49,17 @@ function getDotGlyph(type: ActivityType): string {
 }
 
 function matchesFilter(type: ActivityType, filter: FilterType): boolean {
-  if (filter === "semua") return true;
+  if (filter === "all") return true;
   if (filter === "flags") return type === "flag_created" || type === "flag_resolved";
-  if (filter === "bayaran") return type === "payment_confirmed" || type === "payment_manual";
-  if (filter === "reminder") return type === "reminder_sent";
+  if (filter === "payments") return type === "payment_confirmed" || type === "payment_manual";
+  if (filter === "reminders") return type === "reminder_sent";
   return true;
 }
 
-function groupByDate(list: ActivityLog[]): { label: string; items: ActivityLog[] }[] {
+function groupByDate(
+  list: ActivityLog[],
+  labels: { today: string; yesterday: string; older: string }
+): { label: string; items: ActivityLog[] }[] {
   const now = new Date();
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
@@ -82,9 +79,9 @@ function groupByDate(list: ActivityLog[]): { label: string; items: ActivityLog[]
   });
 
   const groups: { label: string; items: ActivityLog[] }[] = [];
-  if (todayItems.length > 0) groups.push({ label: "Hari Ini", items: todayItems });
-  if (yesterdayItems.length > 0) groups.push({ label: "Semalam", items: yesterdayItems });
-  if (olderItems.length > 0) groups.push({ label: "Sebelum Ini", items: olderItems });
+  if (todayItems.length > 0) groups.push({ label: labels.today, items: todayItems });
+  if (yesterdayItems.length > 0) groups.push({ label: labels.yesterday, items: yesterdayItems });
+  if (olderItems.length > 0) groups.push({ label: labels.older, items: olderItems });
   return groups;
 }
 
@@ -93,10 +90,23 @@ interface Props {
 }
 
 export default function InboxClient({ activities }: Props) {
-  const [filter, setFilter] = useState<FilterType>("semua");
+  const { lang } = useLang();
+  const t = inboxT[lang];
+  const [filter, setFilter] = useState<FilterType>("all");
+
+  const FILTERS: { key: FilterType; label: string }[] = [
+    { key: "all", label: t.filterAll },
+    { key: "flags", label: t.filterFlags },
+    { key: "payments", label: t.filterPayment },
+    { key: "reminders", label: t.filterReminder },
+  ];
 
   const filtered = activities.filter((a) => matchesFilter(a.activity_type, filter));
-  const groups = groupByDate(filtered);
+  const groups = groupByDate(filtered, {
+    today: t.groupToday,
+    yesterday: t.groupYesterday,
+    older: t.groupOlder,
+  });
   const activeFlags = activities.filter((a) => a.activity_type === "flag_created").length;
 
   return (
@@ -150,7 +160,7 @@ export default function InboxClient({ activities }: Props) {
             className="font-clash font-bold text-frost leading-none"
             style={{ fontSize: "28px" }}
           >
-            Peti Masuk
+            {t.pageTitle}
           </h1>
 
           {/* Active flag badge */}
@@ -171,7 +181,7 @@ export default function InboxClient({ activities }: Props) {
                 className="font-dm"
                 style={{ fontSize: "11px", color: "#ef4444" }}
               >
-                {activeFlags} bendera
+                {t.flagBadge(activeFlags)}
               </span>
             </motion.div>
           )}
@@ -179,25 +189,25 @@ export default function InboxClient({ activities }: Props) {
 
         {/* Filter pills */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-          {(Object.keys(FILTER_LABELS) as FilterType[]).map((f) => (
+          {FILTERS.map(({ key, label }) => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
+              key={key}
+              onClick={() => setFilter(key)}
               className="whitespace-nowrap font-dm text-xs shrink-0 active:scale-[0.95]"
               style={{
                 padding: "6px 16px",
                 borderRadius: "75.024px",
                 border:
-                  filter === f
+                  filter === key
                     ? "1px solid rgba(255,255,255,0.3)"
                     : "1px solid transparent",
-                color: filter === f ? "#ffffff" : "#6d6d6d",
+                color: filter === key ? "#ffffff" : "#6d6d6d",
                 background: "transparent",
                 transition:
                   "color 150ms cubic-bezier(0.23,1,0.32,1), border-color 150ms cubic-bezier(0.23,1,0.32,1), transform 120ms",
               }}
             >
-              {FILTER_LABELS[f]}
+              {label}
             </button>
           ))}
         </div>
@@ -234,13 +244,13 @@ export default function InboxClient({ activities }: Props) {
                   className="font-clash font-bold text-frost"
                   style={{ fontSize: "18px" }}
                 >
-                  Tiada aktiviti
+                  {t.emptyTitle}
                 </p>
                 <p
                   className="font-dm text-whisper text-sm mt-1"
                   style={{ maxWidth: "220px", lineHeight: 1.5 }}
                 >
-                  Notifikasi bil dan bayaran akan muncul di sini.
+                  {t.emptyDesc}
                 </p>
               </div>
             </motion.div>
