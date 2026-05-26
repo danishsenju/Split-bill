@@ -45,7 +45,7 @@ export default function SplashScreen() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] } }}
           className="fixed inset-0 z-[9999] bg-midnight flex flex-col items-center justify-center overflow-hidden"
-          aria-label="BayarLah sedang dimuatkan"
+          aria-label="kolekduit sedang dimuatkan"
           aria-live="polite"
         >
           {/* Atmospheric orb — green, top-left */}
@@ -90,7 +90,7 @@ export default function SplashScreen() {
               className="font-clash font-bold text-frost leading-none tracking-tight"
               style={{ fontSize: "52px" }}
             >
-              BayarLah
+              kolekduit
             </motion.h1>
 
             {/* Tagline */}

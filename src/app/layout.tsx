@@ -17,13 +17,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BayarLah — Settle hutang, tanpa drama.",
+  title: "kolekduit — Settle hutang, tanpa drama.",
   description: "Split bil dengan mudah. Kongsi link, track siapa dah bayar, tanpa drama.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "BayarLah",
+    title: "kolekduit",
   },
 };
 

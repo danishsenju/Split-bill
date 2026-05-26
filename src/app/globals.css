@@ -38,12 +38,12 @@
 }
 
 html {
-  background-color: #07090F;
+  background-color: #000000;
 }
 
 body {
   color: #F1F0EB;
-  background-color: #07090F;
+  background-color: #000000;
   font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

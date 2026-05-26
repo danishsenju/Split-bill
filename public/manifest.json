@@ -1,6 +1,6 @@
 {
-  "name": "BayarLah",
-  "short_name": "BayarLah",
+  "name": "kolekduit",
+  "short_name": "kolekduit",
   "description": "Settle hutang, tanpa drama.",
   "start_url": "/",
   "display": "standalone",

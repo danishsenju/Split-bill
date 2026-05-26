@@ -446,7 +446,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
 
         {/* Footer */}
         <p className="text-center font-dm pb-2" style={{ fontSize: "11px", color: "#3a3a3a" }}>
-          BayarLah v1.0 · Settle hutang, tanpa drama.
+          kolekduit v1.0 · Settle hutang, tanpa drama.
         </p>
       </div>
     </div>

@@ -18,13 +18,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("bm");
 
   useEffect(() => {
-    const stored = localStorage.getItem("bayarlah_lang") as Lang | null;
+    const stored = localStorage.getItem("kolekduit_lang") as Lang | null;
     if (stored === "en" || stored === "bm") setLangState(stored);
   }, []);
 
   function setLang(l: Lang) {
     setLangState(l);
-    localStorage.setItem("bayarlah_lang", l);
+    localStorage.setItem("kolekduit_lang", l);
   }
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Home, Heart, BookOpen, ShoppingBag, Sparkles } from "lucide-react";
 
 interface CategoryIconProps {
   category: string;
@@ -17,6 +18,22 @@ export default function CategoryIcon({
 }: CategoryIconProps) {
   const key = category.toLowerCase();
 
+  if (key.includes("rumah")) {
+    return <Home size={size} className={className} style={{ color: "#94a3b8", ...style }} strokeWidth={1.5} />;
+  }
+  if (key.includes("kesihatan")) {
+    return <Heart size={size} className={className} style={{ color: "#c084fc", ...style }} strokeWidth={1.5} />;
+  }
+  if (key.includes("belajar")) {
+    return <BookOpen size={size} className={className} style={{ color: "#2dd4bf", ...style }} strokeWidth={1.5} />;
+  }
+  if (key.includes("beli")) {
+    return <ShoppingBag size={size} className={className} style={{ color: "#c9a84c", ...style }} strokeWidth={1.5} />;
+  }
+  if (!key.includes("makan") && !key.includes("hiburan") && !key.includes("trip")) {
+    return <Sparkles size={size} className={className} style={{ color: "#eb4d8b", ...style }} strokeWidth={1.5} />;
+  }
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -30,18 +47,8 @@ export default function CategoryIcon({
         <RestaurantPaths />
       ) : key.includes("hiburan") ? (
         <EntertainmentPaths />
-      ) : key.includes("trip") ? (
-        <TripPaths />
-      ) : key.includes("rumah") ? (
-        <HousePaths />
-      ) : key.includes("kesihatan") ? (
-        <MedicalPaths />
-      ) : key.includes("belajar") ? (
-        <BookPaths />
-      ) : key.includes("beli") ? (
-        <ShoppingPaths />
       ) : (
-        <SparklePaths />
+        <TripPaths />
       )}
     </svg>
   );
@@ -100,100 +107,3 @@ function TripPaths() {
   );
 }
 
-// ── Rumah / House  ——  Golden Hour  #F7971E → #FFD200 ───────────────────────
-function HousePaths() {
-  return (
-    <>
-      <defs>
-        <linearGradient id="g-rumah" x1="0" y1="0" x2="512" y2="512" gradientUnits={GU}>
-          <stop offset="0%" stopColor="#e2e8f0" />
-          <stop offset="50%" stopColor="#64748b" />
-          <stop offset="100%" stopColor="#020617" />
-        </linearGradient>
-      </defs>
-      {/* Main house silhouette */}
-      <path fill="url(#g-rumah)" d="M256 48L48 252H120V464H216V344H296V464H392V252H464Z" />
-      {/* Chimney */}
-      <path fill="url(#g-rumah)" d="M318 104H366V252H318Z" />
-    </>
-  );
-}
-
-// ── Kesihatan / Health  ——  Mint Vitality  #43E97B → #38F9D7 ────────────────
-function MedicalPaths() {
-  return (
-    <>
-      <defs>
-        <linearGradient id="g-kesihatan" x1="0" y1="0" x2="512" y2="512" gradientUnits={GU}>
-          <stop offset="0%" stopColor="#e8d5b7" />
-          <stop offset="50%" stopColor="#9b7fa6" />
-          <stop offset="100%" stopColor="#0d0221" />
-        </linearGradient>
-      </defs>
-      {/* Outer ring */}
-      <path fill="url(#g-kesihatan)" d="M256 32C132 32 32 132 32 256S132 480 256 480 480 380 480 256 380 32 256 32ZM256 448C150 448 64 362 64 256S150 64 256 64 448 150 448 256 362 448 256 448Z" />
-      {/* Medical cross */}
-      <path fill="url(#g-kesihatan)" d="M216 120H296V216H392V296H296V392H216V296H120V216H216Z" />
-    </>
-  );
-}
-
-// ── Belajar / Book  ——  Royal Indigo  #4776E6 → #8E54E9 ─────────────────────
-function BookPaths() {
-  return (
-    <>
-      <defs>
-        <linearGradient id="g-belajar" x1="0" y1="0" x2="512" y2="512" gradientUnits={GU}>
-          <stop offset="0%" stopColor="#e8c870" />
-          <stop offset="50%" stopColor="#2dd4bf" />
-          <stop offset="100%" stopColor="#071628" />
-        </linearGradient>
-      </defs>
-      {/* Left page */}
-      <path fill="url(#g-belajar)" d="M240 96H56C39 96 32 110 32 128V400C32 418 39 432 56 432H240V96Z" />
-      {/* Right page */}
-      <path fill="url(#g-belajar)" d="M272 96H456C473 96 480 110 480 128V400C480 418 473 432 456 432H272V96Z" />
-      {/* Spine */}
-      <path fill="url(#g-belajar)" d="M240 80H272V448H240V80Z" />
-    </>
-  );
-}
-
-// ── Beli-belah / Shopping  ——  Rose Luxe  #F953C6 → #B91D73 ─────────────────
-function ShoppingPaths() {
-  return (
-    <>
-      <defs>
-        <linearGradient id="g-beli" x1="0" y1="0" x2="512" y2="512" gradientUnits={GU}>
-          <stop offset="0%" stopColor="#c9a84c" />
-          <stop offset="50%" stopColor="#a0522d" />
-          <stop offset="100%" stopColor="#1a0a00" />
-        </linearGradient>
-      </defs>
-      {/* Bag body */}
-      <path fill="url(#g-beli)" d="M108 224H404L432 456C434 468 424 480 412 480H100C88 480 78 468 80 456Z" />
-      {/* Handle arch */}
-      <path fill="url(#g-beli)" d="M176 224C176 80 336 80 336 224L308 224C308 108 204 108 204 224Z" />
-    </>
-  );
-}
-
-// ── Lain-lain / Misc  ——  Cosmic Drift  #667EEA → #764BA2 ───────────────────
-function SparklePaths() {
-  return (
-    <>
-      <defs>
-        <linearGradient id="g-lain" x1="0" y1="0" x2="512" y2="512" gradientUnits={GU}>
-          <stop offset="0%" stopColor="#f7c59f" />
-          <stop offset="50%" stopColor="#eb4d8b" />
-          <stop offset="100%" stopColor="#1a0030" />
-        </linearGradient>
-      </defs>
-      {/* 4-pointed star */}
-      <path fill="url(#g-lain)" d="M256 32L286 226L480 256L286 286L256 480L226 286L32 256L226 226Z" />
-      {/* Accent dots */}
-      <circle fill="url(#g-lain)" cx="380" cy="100" r="24" />
-      <circle fill="url(#g-lain)" cx="132" cy="412" r="16" />
-    </>
-  );
-}

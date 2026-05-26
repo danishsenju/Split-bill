@@ -78,7 +78,7 @@ export default function LoginPage() {
                 backgroundClip: "text",
               }}
             >
-              BayarLah
+              kolekduit
             </span>
           </h1>
           <p className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>

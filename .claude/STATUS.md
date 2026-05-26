@@ -1,4 +1,4 @@
-# STATUS.md — BayarLah Build Progress
+# STATUS.md — kolekduit Build Progress
 
 > Update this file every time a feature is completed, in progress, or blocked.
 > Format: [x] done | [-] in progress | [ ] not started | [!] blocked
@@ -23,7 +23,7 @@ Last updated: 24 May 2026 (screens implemented)
 - [ ] next-pwa configured
 - [x] PWA manifest.json created
 - [ ] Vercel project connected to GitHub repo
-- [ ] Custom domain configured (bayarlah.vercel.app)
+- [ ] Custom domain configured (kolekduit.vercel.app)
 - [x] Google Fonts loaded (Syne, DM Sans, JetBrains Mono)
 - [x] Middleware auth guard for organizer routes
 - [x] TypeScript types defined in types/index.ts
@@ -287,8 +287,8 @@ Last updated: 24 May 2026 (screens implemented)
 ## PWA
 
 - [x] manifest.json configured
-  - [x] App name: BayarLah
-  - [x] Short name: BayarLah
+  - [x] App name: kolekduit
+  - [x] Short name: kolekduit
   - [x] Theme color: #0A1628
   - [x] Background color: #0A1628
   - [x] Display: standalone
@@ -331,9 +331,9 @@ Last updated: 24 May 2026 (screens implemented)
 
 > Document bugs here as they are found
 
-| # | Issue | Screen | Priority | Status |
-|---|---|---|---|---|
-| — | None yet | — | — | — |
+| #   | Issue    | Screen | Priority | Status |
+| --- | -------- | ------ | -------- | ------ |
+| —   | None yet | —      | —        | —      |
 
 ---
 
@@ -341,9 +341,9 @@ Last updated: 24 May 2026 (screens implemented)
 
 > Document important decisions made during build here
 
-| Date | Decision | Reason |
-|---|---|---|
-| 24 May | Use Gemini 2.0 Flash (not Claude) for scan | Free tier, no credit card for judges |
-| 24 May | Member self-declare payment (no bank API) | Out of scope, not expected by judges |
+| Date   | Decision                                       | Reason                                        |
+| ------ | ---------------------------------------------- | --------------------------------------------- |
+| 24 May | Use Gemini 2.0 Flash (not Claude) for scan     | Free tier, no credit card for judges          |
+| 24 May | Member self-declare payment (no bank API)      | Out of scope, not expected by judges          |
 | 24 May | Personal link per member (not one shared link) | Personalized UX, no "mana satu aku" confusion |
-| 24 May | Pay Code in bank rujukan only, not app auth | Simpler UX, lower friction |
+| 24 May | Pay Code in bank rujukan only, not app auth    | Simpler UX, lower friction                    |

@@ -129,7 +129,7 @@ export default function RegisterPage() {
                 backgroundClip: "text",
               }}
             >
-              BayarLah
+              kolekduit
             </span>
           </h1>
           <p className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>

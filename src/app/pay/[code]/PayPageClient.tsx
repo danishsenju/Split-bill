@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, Copy, Check, Upload, X } from "lucide-react";
+import { Copy, Check, Upload, X, ArrowLeft, ChevronRight } from "lucide-react";
 import { Bill, BillMember } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { formatRM, formatDaysRemaining, getDaysRemaining, maskAccount } from "@/lib/utils";
@@ -34,6 +34,74 @@ type EqualStep = "entry" | "payment" | "swipe" | "success";
 type ScanStep = "tuntut" | "semak" | "bayar" | "success";
 type PaymentTab = "bank" | "qr";
 
+const GRADIENT = "linear-gradient(90deg, rgb(160, 224, 171), rgb(255, 172, 46) 50%, rgb(165, 45, 37))";
+const PILL = "75.024px";
+
+const glass: CSSProperties = {
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  borderRadius: "14px",
+  backdropFilter: "blur(16px)",
+};
+
+const primaryBtn: CSSProperties = {
+  borderRadius: PILL,
+  background: GRADIENT,
+  color: "#000",
+  fontWeight: 600,
+  fontSize: "15px",
+  padding: "17px 28px",
+  width: "100%",
+  border: "none",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  letterSpacing: "0.01em",
+};
+
+const ghostPill: CSSProperties = {
+  borderRadius: PILL,
+  background: "transparent",
+  border: "1px solid rgba(255,255,255,0.22)",
+  color: "#fff",
+  fontWeight: 400,
+  fontSize: "13px",
+  padding: "10px 20px",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "6px",
+};
+
+// Atmospheric orbs — position: absolute so they sit inside the page container (not behind it)
+function Orbs() {
+  return (
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+      <div style={{
+        position: "absolute", top: "-10%", left: "-30%",
+        width: "80%", height: "70%",
+        background: "radial-gradient(circle, rgba(160,224,171,0.32) 0%, transparent 60%)",
+        filter: "blur(70px)",
+      }} />
+      <div style={{
+        position: "absolute", top: "25%", right: "-25%",
+        width: "70%", height: "55%",
+        background: "radial-gradient(circle, rgba(255,172,46,0.26) 0%, transparent 60%)",
+        filter: "blur(80px)",
+      }} />
+      <div style={{
+        position: "absolute", bottom: "-15%", left: "10%",
+        width: "75%", height: "60%",
+        background: "radial-gradient(circle, rgba(165,45,37,0.26) 0%, transparent 60%)",
+        filter: "blur(70px)",
+      }} />
+    </div>
+  );
+}
+
 export default function PayPageClient({
   bill,
   member: initialMember,
@@ -41,10 +109,8 @@ export default function PayPageClient({
 }: Props) {
   const [member] = useState<BillMember | null>(initialMember);
   const [guestName, setGuestName] = useState("");
-
   const [equalStep, setEqualStep] = useState<EqualStep>("entry");
   const [scanStep, setScanStep] = useState<ScanStep>("tuntut");
-
   const [paymentTab, setPaymentTab] = useState<PaymentTab>("bank");
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   const [screenshot, setScreenshot] = useState<File | null>(null);
@@ -57,7 +123,6 @@ export default function PayPageClient({
   const isOverdue = daysLeft < 0;
   const categoryEmoji = bill.category?.split(" ")[0] ?? "🧾";
   const categoryName = bill.category?.replace(/^\S+\s*/, "") ?? "";
-
   const resolvedName = member?.name ?? guestName;
   const amountOwed = member?.amount_owed ?? 0;
 
@@ -65,7 +130,6 @@ export default function PayPageClient({
     setConfirming(true);
     try {
       const supabase = createClient();
-
       let screenshotUrl: string | null = null;
       if (screenshot && member) {
         const ext = screenshot.name.split(".").pop() ?? "jpg";
@@ -78,7 +142,6 @@ export default function PayPageClient({
           screenshotUrl = urlData.publicUrl;
         }
       }
-
       if (member) {
         await supabase
           .from("bill_members")
@@ -90,13 +153,9 @@ export default function PayPageClient({
           })
           .eq("id", member.id);
       }
-
       setConfetti(true);
-      if (bill.split_mode === "equal") {
-        setEqualStep("success");
-      } else {
-        setScanStep("success");
-      }
+      if (bill.split_mode === "equal") setEqualStep("success");
+      else setScanStep("success");
     } finally {
       setConfirming(false);
     }
@@ -110,25 +169,51 @@ export default function PayPageClient({
     }
   }
 
-  // Guest name entry
+  // ── GUEST ENTRY ──
   if (!member && !guestName) {
     return (
-      <div className="min-h-dvh bg-bg-primary flex flex-col max-w-sm mx-auto">
-        <div className="px-4 pt-12 pb-4 flex flex-col gap-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">{categoryEmoji}</span>
-            <span className="text-text-secondary text-xs font-dm">{categoryName}</span>
-            <span className={`ml-auto text-xs font-dm px-2 py-1 rounded-pill ${isOverdue ? "bg-danger/15 text-danger" : "bg-warning/15 text-warning"}`}>
-              {formatDaysRemaining(bill.due_date)}
-            </span>
-          </div>
-          <h1 className="font-clash font-bold text-xl text-text-primary">{bill.title}</h1>
-          {organizerProfile?.name && (
-            <p className="text-text-muted text-sm font-dm">dari {organizerProfile.name}</p>
-          )}
-        </div>
-        <div className="px-4 flex-1 flex flex-col justify-center">
-          <GuestNameInput onComplete={(name) => setGuestName(name)} />
+      <div style={{ minHeight: "100dvh", background: "transparent", maxWidth: "480px", margin: "0 auto", position: "relative", overflow: "hidden" }}>
+        <Orbs />
+        <div style={{ position: "relative", zIndex: 1, padding: "56px 24px 40px" }}>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+            {/* Gradient strip */}
+            <div style={{ height: "3px", borderRadius: "2px", background: GRADIENT, marginBottom: "32px", boxShadow: "0 0 24px rgba(255,172,46,0.5)" }} />
+
+            {/* Bill meta */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+              <span style={{ fontSize: "20px" }}>{categoryEmoji}</span>
+              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px", letterSpacing: "0.04em" }}>{categoryName}</span>
+              <span style={{
+                marginLeft: "auto",
+                fontSize: "11px",
+                padding: "5px 12px",
+                borderRadius: PILL,
+                border: `1px solid ${isOverdue ? "rgba(255,71,87,0.3)" : "rgba(255,211,42,0.3)"}`,
+                color: isOverdue ? "#ff6b6b" : "#ffd32a",
+                background: isOverdue ? "rgba(255,71,87,0.08)" : "rgba(255,211,42,0.08)",
+              }}>
+                {formatDaysRemaining(bill.due_date)}
+              </span>
+            </div>
+
+            <h1 style={{
+              fontFamily: "var(--font-syne), system-ui",
+              fontWeight: 700,
+              fontSize: "32px",
+              color: "#fff",
+              lineHeight: 1.1,
+              marginBottom: "6px",
+            }}>
+              {bill.title}
+            </h1>
+            {organizerProfile?.name && (
+              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "13px", marginBottom: "40px" }}>
+                dari {organizerProfile.name}
+              </p>
+            )}
+
+            <GuestNameInput onComplete={(name) => setGuestName(name)} />
+          </motion.div>
         </div>
       </div>
     );
@@ -137,76 +222,101 @@ export default function PayPageClient({
   // ── EQUAL FLOW ──
   if (bill.split_mode === "equal") {
     return (
-      <div className="min-h-dvh bg-bg-primary max-w-sm mx-auto">
+      <div style={{ minHeight: "100dvh", background: "transparent", maxWidth: "480px", margin: "0 auto", position: "relative", overflow: "hidden" }}>
+        <Orbs />
         <Confetti active={confetti} />
 
         <AnimatePresence mode="wait">
           {equalStep === "entry" && (
             <motion.div
               key="entry"
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-              className="px-4 pt-12 pb-8 flex flex-col gap-5"
+              transition={{ duration: 0.38, ease: [0.23, 1, 0.32, 1] }}
+              style={{ position: "relative", zIndex: 1, padding: "56px 24px 48px", display: "flex", flexDirection: "column", gap: "0" }}
             >
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-2xl">{categoryEmoji}</span>
-                <span className="text-text-secondary text-xs font-dm">{categoryName}</span>
-                <span className={`ml-auto text-xs font-dm px-2 py-1 rounded-pill ${isOverdue ? "bg-danger/15 text-danger" : "bg-warning/15 text-warning"}`}>
-                  {formatDaysRemaining(bill.due_date)}
+              {/* Gradient strip top */}
+              <div style={{ height: "3px", borderRadius: "2px", background: GRADIENT, marginBottom: "28px", boxShadow: "0 0 28px rgba(255,172,46,0.45)" }} />
+
+              {/* Bill header */}
+              <div style={{ marginBottom: "32px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                  <span style={{ fontSize: "20px" }}>{categoryEmoji}</span>
+                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px" }}>{categoryName}</span>
+                  <span style={{
+                    marginLeft: "auto",
+                    fontSize: "11px",
+                    padding: "5px 12px",
+                    borderRadius: PILL,
+                    border: `1px solid ${isOverdue ? "rgba(255,71,87,0.3)" : "rgba(255,211,42,0.3)"}`,
+                    color: isOverdue ? "#ff6b6b" : "#ffd32a",
+                    background: isOverdue ? "rgba(255,71,87,0.08)" : "rgba(255,211,42,0.08)",
+                  }}>
+                    {formatDaysRemaining(bill.due_date)}
+                  </span>
+                </div>
+                <h1 style={{ fontFamily: "var(--font-syne), system-ui", fontWeight: 700, fontSize: "30px", color: "#fff", lineHeight: 1.1, marginBottom: "4px" }}>
+                  {bill.title}
+                </h1>
+                {organizerProfile?.name && (
+                  <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "13px" }}>dari {organizerProfile.name}</p>
+                )}
+                {bill.description && (
+                  <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "13px", marginTop: "6px", lineHeight: 1.5 }}>{bill.description}</p>
+                )}
+              </div>
+
+              {/* Greeting + amount hero — full gradient background like monopo.vn */}
+              <div style={{ background: GRADIENT, borderRadius: "16px", padding: "28px 24px", marginBottom: "16px", textAlign: "center" }}>
+                <p style={{ color: "rgba(0,0,0,0.6)", fontSize: "14px", marginBottom: "4px" }}>
+                  Hai, <span style={{ color: "#000", fontWeight: 700 }}>{resolvedName}</span> 👋
+                </p>
+                <p style={{ color: "rgba(0,0,0,0.5)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: "16px" }}>
+                  Jumlah yang perlu dibayar
+                </p>
+                <span style={{
+                  display: "block",
+                  fontSize: "62px",
+                  fontWeight: 800,
+                  fontFamily: "var(--font-plus-jakarta), system-ui",
+                  lineHeight: 1,
+                  color: "#000",
+                  letterSpacing: "-0.02em",
+                }}>
+                  {formatRM(amountOwed)}
                 </span>
               </div>
 
-              <div>
-                <h1 className="font-clash font-bold text-2xl text-text-primary">{bill.title}</h1>
-                {organizerProfile?.name && (
-                  <p className="text-text-muted text-sm font-dm">dari {organizerProfile.name}</p>
-                )}
-                {bill.description && (
-                  <p className="text-text-secondary text-sm font-dm mt-1">{bill.description}</p>
-                )}
-              </div>
-
-              <div className="accent-border rounded-card p-5 flex flex-col items-center gap-2 text-center">
-                <p className="font-dm text-text-secondary text-base">
-                  Hai, <span className="text-text-primary font-semibold">{resolvedName}</span>! 👋
+              {/* Pay Code */}
+              <div style={{ ...glass, padding: "20px 20px 16px", marginBottom: "24px" }}>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "10px" }}>
+                  Pay Code
                 </p>
-                <p className="text-text-muted text-sm font-dm">Jumlah yang perlu dibayar</p>
-                <p className="font-clash font-bold text-5xl text-accent mt-1">
-                  {formatRM(amountOwed)}
-                </p>
-              </div>
-
-              <div className="accent-border rounded-card p-4">
-                <p className="text-text-muted text-xs font-dm mb-2">Pay Code</p>
                 <PayCodeDisplay code={bill.pay_code} />
               </div>
 
-              <button
-                onClick={() => setShowPaymentSheet(true)}
-                className="bg-accent text-bg-primary font-dm font-semibold py-4 rounded-btn text-base w-full active:scale-[0.97]"
-                style={{ transition: "transform 160ms var(--ease-out)" }}
-              >
+              {/* CTA */}
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowPaymentSheet(true)} style={primaryBtn}>
                 Buat Bayaran
-              </button>
+                <ChevronRight size={18} />
+              </motion.button>
 
-              <BottomSheet
-                open={showPaymentSheet}
-                onClose={() => setShowPaymentSheet(false)}
-                title="Kaedah Bayaran"
-              >
-                <div className="flex gap-2 mb-4">
+              {/* Payment bottom sheet */}
+              <BottomSheet open={showPaymentSheet} onClose={() => setShowPaymentSheet(false)} title="Kaedah Bayaran">
+                <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
                   {(["bank", "qr"] as PaymentTab[]).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setPaymentTab(tab)}
-                      className={`flex-1 py-2.5 rounded-btn text-sm font-dm font-medium active:scale-[0.97] ${
-                        paymentTab === tab
-                          ? "bg-accent text-bg-primary"
-                          : "bg-bg-primary text-text-secondary border border-[rgba(232,184,75,0.12)]"
-                      }`}
-                      style={{ transition: "background 200ms var(--ease-out), color 200ms var(--ease-out), transform 160ms var(--ease-out)" }}
+                      style={{
+                        flex: 1, padding: "11px", borderRadius: PILL,
+                        fontSize: "13px", fontWeight: 500, cursor: "pointer", transition: "all 200ms ease",
+                        ...(paymentTab === tab
+                          ? { background: GRADIENT, color: "#000", border: "none" }
+                          : { background: "transparent", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.14)" }
+                        ),
+                      }}
                     >
                       {tab === "bank" ? "Bank Transfer" : "DuitNow QR"}
                     </button>
@@ -214,58 +324,48 @@ export default function PayPageClient({
                 </div>
 
                 {paymentTab === "bank" ? (
-                  <div className="flex flex-col gap-3">
-                    <div
-                      className="bg-bg-primary rounded-input px-4 py-4 flex flex-col gap-1.5 border border-[rgba(232,184,75,0.10)]"
-                      style={{ boxShadow: "0 0 12px rgba(232,184,75,0.04)" }}
-                    >
-                      <p className="text-text-muted text-xs font-dm">Bank</p>
-                      <p className="text-text-primary font-dm font-semibold text-sm">
-                        {organizerProfile?.bank_name ?? "—"}
-                      </p>
-                      <p className="text-text-muted text-xs font-dm mt-1">No. Akaun</p>
-                      <p className="font-jetbrains text-accent text-lg tracking-widest">
-                        {organizerProfile?.bank_account
-                          ? maskAccount(organizerProfile.bank_account)
-                          : "—"}
-                      </p>
-                      <p className="text-text-muted text-xs font-dm mt-1">Nama Pemegang</p>
-                      <p className="text-text-primary font-dm text-sm">
-                        {organizerProfile?.bank_holder_name ?? "—"}
-                      </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ ...glass, padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                      <div>
+                        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Bank</p>
+                        <p style={{ color: "#fff", fontWeight: 600, fontSize: "15px" }}>{organizerProfile?.bank_name ?? "—"}</p>
+                      </div>
+                      <div>
+                        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>No. Akaun</p>
+                        <p style={{ fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: "20px", letterSpacing: "0.1em", background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                          {organizerProfile?.bank_account ? maskAccount(organizerProfile.bank_account) : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Nama Pemegang</p>
+                        <p style={{ color: "#fff", fontSize: "14px" }}>{organizerProfile?.bank_holder_name ?? "—"}</p>
+                      </div>
                     </div>
-                    <button
-                      onClick={copyAccount}
-                      className="flex items-center justify-center gap-2 bg-bg-surface border border-[rgba(232,184,75,0.12)] rounded-btn py-3 text-text-secondary text-sm font-dm active:scale-[0.97]"
-                      style={{ transition: "transform 160ms var(--ease-out)" }}
-                    >
-                      {copiedAccount ? <Check size={16} className="text-success" /> : <Copy size={16} />}
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={copyAccount} style={{ ...ghostPill, padding: "14px 24px" }}>
+                      {copiedAccount ? <Check size={15} style={{ color: "#a0e0ab" }} /> : <Copy size={15} />}
                       {copiedAccount ? "Disalin!" : "Salin No. Akaun"}
-                    </button>
+                    </motion.button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3">
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
                     {organizerProfile?.qr_url ? (
-                      <div className="bg-white rounded-card p-3 w-52 h-52 flex items-center justify-center">
+                      <div style={{ background: "#fff", borderRadius: "14px", padding: "12px", width: "196px", height: "196px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={organizerProfile.qr_url} alt="DuitNow QR" className="w-full h-full object-contain" />
+                        <img src={organizerProfile.qr_url} alt="DuitNow QR" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                       </div>
                     ) : (
-                      <div className="bg-bg-primary rounded-card w-52 h-52 flex items-center justify-center">
-                        <p className="text-text-muted text-sm font-dm text-center">QR tidak tersedia</p>
+                      <div style={{ ...glass, width: "196px", height: "196px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center" }}>QR tidak tersedia</p>
                       </div>
                     )}
-                    <p className="text-text-muted text-xs font-dm text-center">Imbas dengan app bank anda</p>
+                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Imbas dengan app bank anda</p>
                   </div>
                 )}
 
-                <button
-                  onClick={() => { setShowPaymentSheet(false); setEqualStep("swipe"); }}
-                  className="w-full mt-4 bg-accent text-bg-primary font-dm font-semibold py-4 rounded-btn text-sm active:scale-[0.97]"
-                  style={{ transition: "transform 160ms var(--ease-out)" }}
-                >
-                  Dah Transfer? →
-                </button>
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setShowPaymentSheet(false); setEqualStep("swipe"); }} style={{ ...primaryBtn, marginTop: "20px" }}>
+                  Dah Transfer?
+                  <ChevronRight size={16} />
+                </motion.button>
               </BottomSheet>
             </motion.div>
           )}
@@ -273,57 +373,71 @@ export default function PayPageClient({
           {equalStep === "swipe" && (
             <motion.div
               key="swipe"
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-              className="px-4 pt-12 pb-8 flex flex-col gap-5"
+              transition={{ duration: 0.38, ease: [0.23, 1, 0.32, 1] }}
+              style={{ position: "relative", zIndex: 1, padding: "48px 24px 48px", display: "flex", flexDirection: "column", gap: "20px" }}
             >
-              <button
-                onClick={() => setEqualStep("entry")}
-                className="flex items-center gap-2 text-text-secondary self-start active:opacity-70"
-              >
-                <ArrowLeft size={18} />
-                <span className="text-sm font-dm">Kembali</span>
-              </button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setEqualStep("entry")} style={{ ...ghostPill, alignSelf: "flex-start" }}>
+                <ArrowLeft size={14} />
+                Kembali
+              </motion.button>
 
-              <div className="accent-border rounded-card p-5 flex flex-col items-center gap-2 text-center">
-                <span className="text-xs font-dm px-3 py-1 rounded-pill bg-warning/15 text-warning">
+              {/* Amount hero — full gradient background */}
+              <div style={{ background: GRADIENT, borderRadius: "16px", padding: "28px 24px", textAlign: "center" }}>
+                <span style={{
+                  display: "inline-block",
+                  fontSize: "11px",
+                  padding: "5px 14px",
+                  borderRadius: PILL,
+                  border: "1px solid rgba(0,0,0,0.2)",
+                  color: "#000",
+                  background: "rgba(0,0,0,0.12)",
+                  marginBottom: "16px",
+                }}>
                   Menunggu pengesahan
                 </span>
-                <p className="font-clash font-bold text-5xl text-accent mt-2">
+                <span style={{
+                  display: "block",
+                  fontSize: "62px",
+                  fontWeight: 800,
+                  fontFamily: "var(--font-plus-jakarta), system-ui",
+                  lineHeight: 1,
+                  color: "#000",
+                  letterSpacing: "-0.02em",
+                  marginBottom: "8px",
+                }}>
                   {formatRM(amountOwed)}
-                </p>
-                <p className="text-text-secondary font-dm text-sm">{bill.title}</p>
+                </span>
+                <p style={{ color: "rgba(0,0,0,0.55)", fontSize: "13px" }}>{bill.title}</p>
               </div>
 
-              <div className="accent-border rounded-card p-4 flex flex-col gap-3">
-                <p className="text-text-secondary text-sm font-dm">
-                  Screenshot Resit Transfer <span className="text-text-muted">(pilihan)</span>
+              {/* Upload */}
+              <div style={{ ...glass, padding: "20px" }}>
+                <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px", marginBottom: "12px" }}>
+                  Screenshot Resit Transfer <span style={{ color: "rgba(255,255,255,0.25)" }}>(pilihan)</span>
                 </p>
                 {screenshot ? (
-                  <div className="flex items-center gap-3 bg-bg-primary rounded-input px-3 py-2 border border-[rgba(232,184,75,0.10)]">
-                    <Check size={14} className="text-success" />
-                    <span className="text-text-primary text-xs font-dm flex-1 truncate">{screenshot.name}</span>
-                    <button onClick={() => setScreenshot(null)} className="text-danger"><X size={14} /></button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(255,255,255,0.04)", borderRadius: "10px", padding: "10px 14px", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <Check size={14} style={{ color: "#a0e0ab", flexShrink: 0 }} />
+                    <span style={{ color: "#fff", fontSize: "12px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{screenshot.name}</span>
+                    <button onClick={() => setScreenshot(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff6b6b", padding: 0 }}>
+                      <X size={14} />
+                    </button>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center gap-2 border border-dashed border-accent/20 rounded-input py-3 cursor-pointer text-text-secondary text-sm font-dm">
+                  <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: "10px", padding: "18px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: "13px" }}>
                     <Upload size={16} />
                     Lampirkan bukti bayaran
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) setScreenshot(f); }}
-                    />
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) setScreenshot(f); }} />
                   </label>
                 )}
               </div>
 
-              <p className="text-text-muted text-xs font-dm text-center px-4">
+              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", textAlign: "center", lineHeight: 1.6 }}>
                 Pastikan dah transfer ke{" "}
-                <span className="text-text-secondary">
+                <span style={{ color: "rgba(255,255,255,0.6)" }}>
                   {organizerProfile?.bank_holder_name ?? organizerProfile?.name ?? "penganjur"}
                 </span>{" "}
                 sebelum confirm
@@ -331,23 +445,14 @@ export default function PayPageClient({
 
               <SwipeConfirm onConfirm={handleConfirm} disabled={confirming} />
 
-              <button
-                onClick={() => setEqualStep("entry")}
-                className="text-text-muted text-sm font-dm text-center"
-              >
+              <button onClick={() => setEqualStep("entry")} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center" }}>
                 ← Belum lagi
               </button>
             </motion.div>
           )}
 
           {equalStep === "success" && (
-            <SuccessScreen
-              name={resolvedName}
-              billTitle={bill.title}
-              amountOwed={amountOwed}
-              dismissPromo={dismissPromo}
-              onDismissPromo={() => setDismissPromo(true)}
-            />
+            <SuccessScreen name={resolvedName} billTitle={bill.title} amountOwed={amountOwed} dismissPromo={dismissPromo} onDismissPromo={() => setDismissPromo(true)} />
           )}
         </AnimatePresence>
       </div>
@@ -356,16 +461,25 @@ export default function PayPageClient({
 
   // ── SCAN FLOW ──
   return (
-    <div className="min-h-dvh bg-bg-primary max-w-sm mx-auto">
+    <div style={{ minHeight: "100dvh", background: "transparent", maxWidth: "480px", margin: "0 auto", position: "relative", overflow: "hidden" }}>
+      <Orbs />
       <Confetti active={confetti} />
 
       {scanStep !== "success" && (
-        <div className="px-4 pt-12 pb-3">
-          <div className="flex items-center justify-center gap-2 text-xs font-dm">
+        <div style={{ position: "relative", zIndex: 1, padding: "48px 24px 0" }}>
+          {/* Gradient strip */}
+          <div style={{ height: "3px", borderRadius: "2px", background: GRADIENT, marginBottom: "20px", boxShadow: "0 0 24px rgba(255,172,46,0.4)" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
             {(["tuntut", "semak", "bayar"] as const).map((s, i) => (
-              <div key={s} className="flex items-center gap-2">
-                {i > 0 && <span className="text-text-muted">→</span>}
-                <span className={`px-2 py-1 rounded-pill ${scanStep === s ? "bg-accent text-bg-primary font-semibold" : "text-text-muted"}`}>
+              <div key={s} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {i > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "12px" }}>›</span>}
+                <span style={{
+                  fontSize: "12px", padding: "6px 16px", borderRadius: PILL,
+                  ...(scanStep === s
+                    ? { background: GRADIENT, color: "#000", fontWeight: 600 }
+                    : { color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.1)" }
+                  ),
+                }}>
                   {i + 1} {s === "tuntut" ? "Tuntut" : s === "semak" ? "Semak" : "Bayar"}
                 </span>
               </div>
@@ -378,172 +492,141 @@ export default function PayPageClient({
         {scanStep === "tuntut" && (
           <motion.div
             key="tuntut"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className="px-4 pb-8 flex flex-col gap-4"
+            initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            style={{ position: "relative", zIndex: 1, padding: "20px 24px 48px", display: "flex", flexDirection: "column", gap: "16px" }}
           >
-            <h1 className="font-clash font-bold text-xl text-text-primary">Tuntut Item Anda</h1>
-            <p className="text-text-secondary text-sm font-dm">Pilih item yang anda pesan daripada resit ini.</p>
-
-            <div className="accent-border rounded-card p-4 flex flex-col gap-2">
-              {(bill.bill_items ?? []).map((item) => (
-                <div key={item.id} className="flex items-center gap-3 py-2 border-b border-[rgba(232,184,75,0.08)] last:border-0">
-                  <div className="flex-1">
-                    <p className="text-text-primary font-dm text-sm">{item.name}</p>
-                    <p className="text-text-muted text-xs font-dm">{item.qty}× {formatRM(item.edited_price)}</p>
+            <h1 style={{ fontFamily: "var(--font-syne), system-ui", fontWeight: 700, fontSize: "26px", color: "#fff" }}>
+              Tuntut Item Anda
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", lineHeight: 1.5 }}>
+              Pilih item yang anda pesan daripada resit ini.
+            </p>
+            <div style={{ ...glass, padding: "4px 0" }}>
+              {(bill.bill_items ?? []).map((item, idx) => (
+                <div key={item.id} style={{
+                  display: "flex", alignItems: "center", gap: "12px", padding: "14px 20px",
+                  borderBottom: idx < (bill.bill_items?.length ?? 0) - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: "#fff", fontSize: "14px", marginBottom: "2px" }}>{item.name}</p>
+                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>{item.qty}× {formatRM(item.edited_price)}</p>
                   </div>
-                  <span className="text-accent font-dm text-sm font-semibold">{formatRM(item.edited_price * item.qty)}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 600, background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                    {formatRM(item.edited_price * item.qty)}
+                  </span>
                 </div>
               ))}
               {(bill.bill_items ?? []).length === 0 && (
-                <p className="text-text-muted text-sm font-dm text-center py-4">Tiada item dalam resit</p>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center", padding: "28px" }}>Tiada item dalam resit</p>
               )}
             </div>
-
-            <button
-              onClick={() => setScanStep("semak")}
-              className="bg-accent text-bg-primary font-dm font-semibold py-4 rounded-btn text-sm w-full active:scale-[0.97]"
-              style={{ transition: "transform 160ms var(--ease-out)" }}
-            >
-              Seterusnya →
-            </button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScanStep("semak")} style={primaryBtn}>
+              Seterusnya <ChevronRight size={16} />
+            </motion.button>
           </motion.div>
         )}
 
         {scanStep === "semak" && (
           <motion.div
             key="semak"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className="px-4 pb-8 flex flex-col gap-4"
+            initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            style={{ position: "relative", zIndex: 1, padding: "20px 24px 48px", display: "flex", flexDirection: "column", gap: "16px" }}
           >
-            <button onClick={() => setScanStep("tuntut")} className="flex items-center gap-2 text-text-secondary self-start">
-              <ArrowLeft size={18} />
-              <span className="text-sm font-dm">Kembali</span>
-            </button>
-
-            <h1 className="font-clash font-bold text-xl text-text-primary">Semak Resit</h1>
-            <p className="text-text-secondary text-sm font-dm">Bandingkan caj dengan resit asal. Flag jika terdapat perbezaan.</p>
-
-            <div className="accent-border rounded-card p-4">
-              <div className="flex gap-2 mb-3">
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setScanStep("tuntut")} style={{ ...ghostPill, alignSelf: "flex-start" }}>
+              <ArrowLeft size={14} /> Kembali
+            </motion.button>
+            <h1 style={{ fontFamily: "var(--font-syne), system-ui", fontWeight: 700, fontSize: "26px", color: "#fff" }}>Semak Resit</h1>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", lineHeight: 1.5 }}>
+              Bandingkan caj dengan resit asal. Flag jika terdapat perbezaan.
+            </p>
+            <div style={{ ...glass, padding: "20px" }}>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
                 {["Ringkasan", "Resit Asal"].map((tab) => (
-                  <button
-                    key={tab}
-                    className="px-3 py-1.5 rounded-pill text-xs font-dm bg-bg-surface text-text-secondary border border-[rgba(232,184,75,0.10)]"
-                  >
+                  <button key={tab} style={{ padding: "8px 18px", borderRadius: PILL, fontSize: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)", cursor: "pointer" }}>
                     {tab}
                   </button>
                 ))}
               </div>
-              <p className="text-text-muted text-sm font-dm text-center py-4">Semua item sepadan ✓</p>
+              <p style={{ color: "#a0e0ab", fontSize: "13px", textAlign: "center", padding: "12px 0" }}>✓ Semua item sepadan</p>
             </div>
-
-            <button
-              onClick={() => setScanStep("bayar")}
-              className="bg-accent text-bg-primary font-dm font-semibold py-4 rounded-btn text-sm w-full active:scale-[0.97]"
-              style={{ transition: "transform 160ms var(--ease-out)" }}
-            >
-              Teruskan ke Bayaran →
-            </button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScanStep("bayar")} style={primaryBtn}>
+              Teruskan ke Bayaran <ChevronRight size={16} />
+            </motion.button>
           </motion.div>
         )}
 
         {scanStep === "bayar" && (
           <motion.div
             key="bayar"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className="px-4 pb-8 flex flex-col gap-5"
+            initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            style={{ position: "relative", zIndex: 1, padding: "20px 24px 48px", display: "flex", flexDirection: "column", gap: "20px" }}
           >
-            <button onClick={() => setScanStep("semak")} className="flex items-center gap-2 text-text-secondary self-start mt-4">
-              <ArrowLeft size={18} />
-              <span className="text-sm font-dm">Kembali</span>
-            </button>
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setScanStep("semak")} style={{ ...ghostPill, alignSelf: "flex-start" }}>
+              <ArrowLeft size={14} /> Kembali
+            </motion.button>
 
-            <div className="accent-border rounded-card p-5 flex flex-col items-center gap-2 text-center">
-              <span className="text-xs font-dm px-3 py-1 rounded-pill bg-warning/15 text-warning">Menunggu pengesahan</span>
-              <p className="font-clash font-bold text-5xl text-accent mt-2">{formatRM(amountOwed)}</p>
-              <p className="text-text-secondary font-dm text-sm">{bill.title}</p>
-              <p className="text-text-muted text-xs font-dm">Berdasarkan item yang anda tuntut</p>
+            <div style={{ background: GRADIENT, borderRadius: "16px", padding: "28px 24px", textAlign: "center" }}>
+              <span style={{ display: "inline-block", fontSize: "11px", padding: "5px 14px", borderRadius: PILL, border: "1px solid rgba(0,0,0,0.2)", color: "#000", background: "rgba(0,0,0,0.12)", marginBottom: "16px" }}>
+                Menunggu pengesahan
+              </span>
+              <span style={{ display: "block", fontSize: "62px", fontWeight: 800, fontFamily: "var(--font-plus-jakarta), system-ui", lineHeight: 1, color: "#000", letterSpacing: "-0.02em", marginBottom: "8px" }}>
+                {formatRM(amountOwed)}
+              </span>
+              <p style={{ color: "rgba(0,0,0,0.55)", fontSize: "13px", marginBottom: "2px" }}>{bill.title}</p>
+              <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "11px" }}>Berdasarkan item yang anda tuntut</p>
             </div>
 
-            <div className="accent-border rounded-card p-4">
+            <div style={{ ...glass, padding: "20px 20px 16px" }}>
+              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "10px" }}>Pay Code</p>
               <PayCodeDisplay code={bill.pay_code} />
             </div>
 
-            <div className="accent-border rounded-card p-4 flex flex-col gap-3">
-              <p className="text-text-secondary text-sm font-dm">
-                Screenshot Resit Transfer <span className="text-text-muted">(pilihan)</span>
+            <div style={{ ...glass, padding: "20px" }}>
+              <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px", marginBottom: "12px" }}>
+                Screenshot Resit Transfer <span style={{ color: "rgba(255,255,255,0.25)" }}>(pilihan)</span>
               </p>
               {screenshot ? (
-                <div className="flex items-center gap-3 bg-bg-primary rounded-input px-3 py-2 border border-[rgba(232,184,75,0.10)]">
-                  <Check size={14} className="text-success" />
-                  <span className="text-text-primary text-xs font-dm flex-1 truncate">{screenshot.name}</span>
-                  <button onClick={() => setScreenshot(null)} className="text-danger"><X size={14} /></button>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(255,255,255,0.04)", borderRadius: "10px", padding: "10px 14px", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <Check size={14} style={{ color: "#a0e0ab", flexShrink: 0 }} />
+                  <span style={{ color: "#fff", fontSize: "12px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{screenshot.name}</span>
+                  <button onClick={() => setScreenshot(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff6b6b", padding: 0 }}><X size={14} /></button>
                 </div>
               ) : (
-                <label className="flex items-center justify-center gap-2 border border-dashed border-accent/20 rounded-input py-3 cursor-pointer text-text-secondary text-sm font-dm">
+                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: "10px", padding: "18px", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontSize: "13px" }}>
                   <Upload size={16} />
                   Lampirkan bukti bayaran
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) setScreenshot(f); }}
-                  />
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) setScreenshot(f); }} />
                 </label>
               )}
             </div>
 
-            <p className="text-text-muted text-xs font-dm text-center px-4">
+            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", textAlign: "center", lineHeight: 1.6 }}>
               Pastikan dah transfer ke{" "}
-              <span className="text-text-secondary">
-                {organizerProfile?.bank_holder_name ?? organizerProfile?.name ?? "penganjur"}
-              </span>{" "}
+              <span style={{ color: "rgba(255,255,255,0.6)" }}>{organizerProfile?.bank_holder_name ?? organizerProfile?.name ?? "penganjur"}</span>{" "}
               sebelum confirm
             </p>
 
             <SwipeConfirm onConfirm={handleConfirm} disabled={confirming} />
 
-            <button onClick={() => setScanStep("semak")} className="text-text-muted text-sm font-dm text-center">
+            <button onClick={() => setScanStep("semak")} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center" }}>
               ← Belum lagi
             </button>
           </motion.div>
         )}
 
         {scanStep === "success" && (
-          <SuccessScreen
-            name={resolvedName}
-            billTitle={bill.title}
-            amountOwed={amountOwed}
-            dismissPromo={dismissPromo}
-            onDismissPromo={() => setDismissPromo(true)}
-          />
+          <SuccessScreen name={resolvedName} billTitle={bill.title} amountOwed={amountOwed} dismissPromo={dismissPromo} onDismissPromo={() => setDismissPromo(true)} />
         )}
       </AnimatePresence>
     </div>
   );
 }
 
-function SuccessScreen({
-  name,
-  billTitle,
-  amountOwed,
-  dismissPromo,
-  onDismissPromo,
-}: {
-  name: string;
-  billTitle: string;
-  amountOwed: number;
-  dismissPromo: boolean;
-  onDismissPromo: () => void;
+function SuccessScreen({ name, billTitle, amountOwed, dismissPromo, onDismissPromo }: {
+  name: string; billTitle: string; amountOwed: number; dismissPromo: boolean; onDismissPromo: () => void;
 }) {
   const now = new Date();
   const dateStr = now.toLocaleDateString("ms-MY", { day: "numeric", month: "long", year: "numeric" });
@@ -551,67 +634,73 @@ function SuccessScreen({
 
   return (
     <motion.div
-      key="success"
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-      className="px-4 pt-12 pb-10 flex flex-col gap-5 items-center"
+      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      style={{ position: "relative", zIndex: 1, padding: "56px 24px 48px", display: "flex", flexDirection: "column", gap: "16px" }}
     >
-      <div className="accent-border rounded-card p-6 w-full flex flex-col items-center gap-3 text-center">
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center"
-          style={{ background: "radial-gradient(circle, rgba(34,197,94,0.2) 0%, rgba(34,197,94,0.05) 100%)" }}
-        >
-          <Check size={36} className="text-success" strokeWidth={2.5} />
-        </div>
-        <h2 className="font-clash font-bold text-2xl text-text-primary">Bayaran Disahkan!</h2>
-        <p className="text-text-secondary font-dm text-sm">
-          Terima kasih, <span className="text-text-primary font-semibold">{name}</span>!
-        </p>
+      {/* Gradient strip */}
+      <div style={{ height: "3px", borderRadius: "2px", background: "linear-gradient(90deg, rgb(160,224,171), rgb(100,200,120))", marginBottom: "20px", boxShadow: "0 0 28px rgba(160,224,171,0.5)" }} />
 
-        <div className="w-full bg-bg-primary rounded-input px-4 py-3 flex flex-col gap-2 mt-2 border border-[rgba(232,184,75,0.10)]">
-          <div className="flex justify-between">
-            <span className="text-text-muted text-xs font-dm">Bil</span>
-            <span className="text-text-primary text-xs font-dm font-medium truncate max-w-[60%] text-right">{billTitle}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-text-muted text-xs font-dm">Jumlah</span>
-            <span className="text-success font-dm font-bold text-sm">{formatRM(amountOwed)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-text-muted text-xs font-dm">Tarikh</span>
-            <span className="text-text-secondary text-xs font-dm">{dateStr} · {timeStr}</span>
-          </div>
+      <div style={{ ...glass, padding: "36px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", textAlign: "center" }}>
+        {/* Check ring with gradient border */}
+        <div style={{
+          width: "84px", height: "84px", borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(160,224,171,0.15) 0%, transparent 70%)",
+          border: "1px solid rgba(160,224,171,0.35)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 0 32px rgba(160,224,171,0.2)",
+        }}>
+          <Check size={38} style={{ color: "#a0e0ab" }} strokeWidth={2.5} />
         </div>
 
-        <p className="text-text-muted text-xs font-dm mt-1">Screenshot dan simpan sebagai bukti</p>
+        <div>
+          <h2 style={{ fontFamily: "var(--font-syne), system-ui", fontWeight: 700, fontSize: "28px", color: "#fff", marginBottom: "6px" }}>
+            Bayaran Disahkan!
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+            Terima kasih, <span style={{ color: "#fff", fontWeight: 600 }}>{name}</span>!
+          </p>
+        </div>
+
+        {/* Receipt summary */}
+        <div style={{ width: "100%", background: "rgba(255,255,255,0.03)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.07)", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Bil</span>
+            <span style={{ color: "#fff", fontSize: "12px", fontWeight: 500, maxWidth: "60%", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{billTitle}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Jumlah</span>
+            <span style={{ fontSize: "15px", fontWeight: 700, background: "linear-gradient(90deg, rgb(160,224,171), rgb(100,200,120))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              {formatRM(amountOwed)}
+            </span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Tarikh</span>
+            <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "12px" }}>{dateStr} · {timeStr}</span>
+          </div>
+        </div>
+
+        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "11px" }}>Screenshot dan simpan sebagai bukti</p>
       </div>
 
       {!dismissPromo && (
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="accent-border rounded-card p-5 w-full flex flex-col gap-3 relative"
+          transition={{ delay: 0.4 }}
+          style={{ ...glass, padding: "24px", position: "relative" }}
         >
-          <button
-            onClick={onDismissPromo}
-            className="absolute top-3 right-3 text-text-muted active:scale-[0.88]"
-            style={{ transition: "transform 160ms var(--ease-out)" }}
-          >
+          <button onClick={onDismissPromo} style={{ position: "absolute", top: "14px", right: "14px", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", padding: 0 }}>
             <X size={16} />
           </button>
-          <h3 className="font-clash font-bold text-text-primary text-base pr-6">
+          <h3 style={{ fontFamily: "var(--font-syne), system-ui", fontWeight: 700, fontSize: "18px", color: "#fff", marginBottom: "8px", paddingRight: "24px" }}>
             Nak jadi organizer? 🚀
           </h3>
-          <p className="text-text-secondary font-dm text-sm">
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", lineHeight: 1.6, marginBottom: "18px" }}>
             Buat bil sendiri, track siapa dah bayar, hantar reminder WhatsApp — semua dalam satu app.
           </p>
-          <Link
-            href="/auth/register"
-            className="flex items-center justify-center bg-accent text-bg-primary font-dm font-semibold py-3 rounded-btn text-sm active:scale-[0.97]"
-            style={{ transition: "transform 160ms var(--ease-out)" }}
-          >
+          <Link href="/auth/register" style={{ ...primaryBtn, textDecoration: "none" }}>
             Daftar Percuma →
           </Link>
         </motion.div>

@@ -1,13 +1,13 @@
-# CLAUDE.md — BayarLah
+# CLAUDE.md — kolekduit
 
 > Read this file fully before writing any code, making any decision, or suggesting anything.
 > This is the single source of truth for the entire project.
 
 ---
 
-## What is BayarLah
+## What is kolekduit
 
-BayarLah is a Malaysian split-bill and payment tracker PWA built with Next.js 14, Supabase, Tailwind CSS, and Framer Motion. It allows an organizer to create a bill, share a personal payment link to each member, and track who has paid in real time.
+kolekduit is a Malaysian split-bill and payment tracker PWA built with Next.js 14, Supabase, Tailwind CSS, and Framer Motion. It allows an organizer to create a bill, share a personal payment link to each member, and track who has paid in real time.
 
 Tagline: **Settle hutang, tanpa drama.**
 
@@ -32,20 +32,20 @@ This is a hackathon submission for Kracked Dev (RM500 prize). Every decision mus
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|---|---|---|
-| Framework | Next.js App Router | 14 |
-| Language | TypeScript | 5 |
-| Styling | Tailwind CSS | 3 |
-| Animation | Framer Motion | 11 |
-| Database | Supabase PostgreSQL | latest |
-| Auth | Supabase Auth | latest |
-| Realtime | Supabase Realtime | latest |
-| Storage | Supabase Storage | latest |
-| AI | Google Gemini 2.0 Flash | latest |
-| Icons | Lucide React | 0.383 |
-| PWA | next-pwa | 5 |
-| Deployment | Vercel | latest |
+| Layer      | Technology              | Version |
+| ---------- | ----------------------- | ------- |
+| Framework  | Next.js App Router      | 14      |
+| Language   | TypeScript              | 5       |
+| Styling    | Tailwind CSS            | 3       |
+| Animation  | Framer Motion           | 11      |
+| Database   | Supabase PostgreSQL     | latest  |
+| Auth       | Supabase Auth           | latest  |
+| Realtime   | Supabase Realtime       | latest  |
+| Storage    | Supabase Storage        | latest  |
+| AI         | Google Gemini 2.0 Flash | latest  |
+| Icons      | Lucide React            | 0.383   |
+| PWA        | next-pwa                | 5       |
+| Deployment | Vercel                  | latest  |
 
 ---
 
@@ -56,7 +56,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 GEMINI_API_KEY=
-NEXT_PUBLIC_APP_URL=https://bayarlah.vercel.app
+NEXT_PUBLIC_APP_URL=https://kolekduit.vercel.app
 ```
 
 Never hardcode these. Always use process.env.
@@ -66,7 +66,7 @@ Never hardcode these. Always use process.env.
 ## Folder Structure
 
 ```
-bayarlah/
+kolekduit/
 ├── app/
 │   ├── (organizer)/
 │   │   ├── dashboard/
@@ -140,19 +140,12 @@ bayarlah/
 ### Colors
 
 ```css
---color-bg-primary: #0A1628
---color-bg-surface: #1C2E20
---color-bg-card: #162318
---color-primary: #1B4332
---color-accent: #D4AF37
---color-success: #00D084
---color-danger: #FF4757
---color-warning: #FFD32A
---color-text-primary: #F5F0E8
---color-text-secondary: #8B9E88
---color-text-muted: #4A5E4C
---color-border: rgba(255,255,255,0.08)
---color-glass: rgba(255,255,255,0.05)
+--color-bg-primary: #0a1628 --color-bg-surface: #1c2e20 --color-bg-card: #162318
+  --color-primary: #1b4332 --color-accent: #d4af37 --color-success: #00d084
+  --color-danger: #ff4757 --color-warning: #ffd32a --color-text-primary: #f5f0e8
+  --color-text-secondary: #8b9e88 --color-text-muted: #4a5e4c
+  --color-border: rgba(255, 255, 255, 0.08)
+  --color-glass: rgba(255, 255, 255, 0.05);
 ```
 
 ### Typography
@@ -188,6 +181,7 @@ Bottom sheets: 24px top only
 ## Key Components Behaviour
 
 ### SwipeConfirm
+
 - Horizontal drag gesture — not a tap
 - Thumb slides right to confirm
 - Track text: "Geser untuk confirm — sudah bayar →"
@@ -195,12 +189,14 @@ Bottom sheets: 24px top only
 - Cannot swipe back after confirmed
 
 ### PayCodeDisplay
+
 - Font: JetBrains Mono 500 22px
 - Letter spacing: 3px
 - Has copy button
 - Shows hint: "Masuk dalam rujukan pembayaran"
 
 ### ReceiptScanner
+
 - Calls /api/scan with base64 image
 - Shows loading: "AI sedang baca resit..."
 - Returns editable item list
@@ -208,6 +204,7 @@ Bottom sheets: 24px top only
 - If scan fails: graceful fallback to manual entry
 
 ### ComparisonTable
+
 - Two tabs: Ringkasan | Resit Asal
 - Ringkasan: Item | Resit | Caj | Status
 - Green row + checkmark if same
@@ -215,6 +212,7 @@ Bottom sheets: 24px top only
 - Flag opens bottom sheet with note input
 
 ### WAToneSelector
+
 - Four tones: Firm | Funny 😂 | Professional | Custom
 - Preview updates live as tone changes
 - Variables auto-inserted: {nama}, {amount}, {code}, {link}
@@ -224,6 +222,7 @@ Bottom sheets: 24px top only
 ## User Flows
 
 ### Organizer Flow
+
 1. Register → setup payment method (bank acc OR DuitNow QR)
 2. Dashboard → create bill
 3. Create bill step 1: category, title, description, due date, split mode
@@ -237,6 +236,7 @@ Bottom sheets: 24px top only
 11. Bill archives when all paid
 
 ### Member Flow (Equal Bill)
+
 1. Open personal link from WA
 2. Choose: Guest (name only) | Login | Register
 3. See name, bill details, amount
@@ -248,11 +248,8 @@ Bottom sheets: 24px top only
 9. Optional: register to become organizer
 
 ### Member Flow (Scan Resit — Unequal Bill)
-1-3. Same as equal bill
-4. Step 1 — Tuntut items: see receipt image, tap items claimed
-5. Handle shared items: stepper for units
-6. Step 2 — Semak resit: comparison table, flag if wrong
-7. Step 3 — Bayar: same as equal bill from step 4
+
+1-3. Same as equal bill 4. Step 1 — Tuntut items: see receipt image, tap items claimed 5. Handle shared items: stepper for units 6. Step 2 — Semak resit: comparison table, flag if wrong 7. Step 3 — Bayar: same as equal bill from step 4
 
 ---
 
@@ -265,15 +262,12 @@ Bottom sheets: 24px top only
 
 function generatePayCode(title: string): string {
   const prefix = title
-    .replace(/[^a-zA-Z]/g, '')
+    .replace(/[^a-zA-Z]/g, "")
     .toUpperCase()
     .slice(0, 3)
-    .padEnd(3, 'X')
-  const suffix = Math.random()
-    .toString(36)
-    .toUpperCase()
-    .slice(2, 6)
-  return `${prefix}-${suffix}`
+    .padEnd(3, "X");
+  const suffix = Math.random().toString(36).toUpperCase().slice(2, 6);
+  return `${prefix}-${suffix}`;
 }
 ```
 
@@ -282,21 +276,25 @@ function generatePayCode(title: string): string {
 ## WhatsApp Message Tones
 
 ### Firm
+
 ```
 {nama}, sila selesaikan pembayaran RM {amount} untuk {tajuk} sebelum {due_date}. Gunakan Pay Code {code} sebagai rujukan pembayaran. {link}
 ```
 
 ### Funny
+
 ```
 Wehh {nama}! Duit tak masuk lagi ni 😅 RM {amount} je beb, kopi pun lagi mahal. Jom settle cepat: {link} (code: {code}) Kang kita kira hutang lain pulak 😂
 ```
 
 ### Professional
+
 ```
 Dear {nama}, this is a gentle reminder regarding your payment of RM {amount} for {tajuk}. Kindly complete your payment before {due_date} using reference code {code}. {link}
 ```
 
 ### Custom
+
 Organizer writes their own. App inserts {amount}, {code}, {link} as variables.
 
 ---
@@ -306,27 +304,29 @@ Organizer writes their own. App inserts {amount}, {code}, {link} as variables.
 Endpoint: `POST /api/scan`
 
 Request:
+
 ```typescript
 {
-  image: string  // base64
-  mimeType: string  // image/jpeg | image/png
+  image: string; // base64
+  mimeType: string; // image/jpeg | image/png
 }
 ```
 
 Response:
+
 ```typescript
 {
-  storeName: string
+  storeName: string;
   items: Array<{
-    id: string
-    name: string
-    price: number
-    qty: number
-  }>
-  subtotal: number
-  tax: number
-  serviceCharge: number
-  total: number
+    id: string;
+    name: string;
+    price: number;
+    qty: number;
+  }>;
+  subtotal: number;
+  tax: number;
+  serviceCharge: number;
+  total: number;
 }
 ```
 
@@ -341,15 +341,19 @@ Subscribe to bill_members changes for organizer dashboard:
 ```typescript
 supabase
   .channel(`bill-${billId}`)
-  .on('postgres_changes', {
-    event: 'UPDATE',
-    schema: 'public',
-    table: 'bill_members',
-    filter: `bill_id=eq.${billId}`
-  }, (payload) => {
-    // update dashboard state
-  })
-  .subscribe()
+  .on(
+    "postgres_changes",
+    {
+      event: "UPDATE",
+      schema: "public",
+      table: "bill_members",
+      filter: `bill_id=eq.${billId}`,
+    },
+    (payload) => {
+      // update dashboard state
+    },
+  )
+  .subscribe();
 ```
 
 ---
@@ -398,6 +402,7 @@ Mode: Scan resit (unequal)
 ## Definition of Done
 
 A feature is complete when:
+
 1. Works on mobile (375px width minimum)
 2. Handles empty state
 3. Handles error state

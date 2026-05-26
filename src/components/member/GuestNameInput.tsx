@@ -4,6 +4,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
+const GRADIENT = "linear-gradient(90deg, rgb(160, 224, 171), rgb(255, 172, 46) 50%, rgb(165, 45, 37))";
+const PILL = "75.024px";
+
 interface Props {
   onComplete: (name: string) => void;
 }
@@ -35,18 +38,18 @@ export default function GuestNameInput({ onComplete }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-5"
+      style={{ display: "flex", flexDirection: "column", gap: "20px" }}
     >
-      <div className="text-center">
-        <h2 className="font-syne font-bold text-2xl text-text-primary mb-2">
+      <div style={{ textAlign: "center" }}>
+        <h2 style={{ fontFamily: "var(--font-plus-jakarta), system-ui", fontWeight: 800, fontSize: "26px", color: "#fff", marginBottom: "8px", lineHeight: 1.2 }}>
           Siapa anda?
         </h2>
-        <p className="text-text-secondary font-dm text-sm">
+        <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "14px", lineHeight: 1.5 }}>
           Masukkan nama untuk meneruskan pembayaran
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <input
           type="text"
           value={name}
@@ -59,24 +62,48 @@ export default function GuestNameInput({ onComplete }: Props) {
           }}
           placeholder="Nama penuh anda"
           autoFocus
-          className="w-full bg-bg-surface border border-white/10 rounded-input px-4 py-3 text-text-primary font-dm text-sm"
+          style={{
+            width: "100%",
+            background: "rgba(255,255,255,0.06)",
+            border: error ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "12px",
+            padding: "14px 18px",
+            color: "#fff",
+            fontSize: "15px",
+            outline: "none",
+          }}
         />
         {error && (
-          <p className="text-danger text-xs font-dm px-1">{error}</p>
+          <p style={{ color: "#ef4444", fontSize: "12px", paddingLeft: "4px" }}>{error}</p>
         )}
       </div>
 
-      <button
+      <motion.button
+        whileTap={{ scale: 0.97 }}
         onClick={handleSubmit}
-        className="flex items-center justify-center gap-2 bg-accent text-bg-primary font-dm font-semibold py-4 rounded-btn text-sm w-full"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          background: GRADIENT,
+          color: "#000",
+          fontWeight: 700,
+          fontSize: "15px",
+          padding: "17px 28px",
+          borderRadius: PILL,
+          border: "none",
+          cursor: "pointer",
+          width: "100%",
+        }}
       >
         Teruskan
         <ArrowRight size={16} />
-      </button>
+      </motion.button>
 
-      <p className="text-text-muted text-xs font-dm text-center">
+      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center" }}>
         Atau{" "}
-        <a href="/auth/login" className="text-accent underline">
+        <a href="/auth/login" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
           log masuk
         </a>{" "}
         jika anda sudah ada akaun

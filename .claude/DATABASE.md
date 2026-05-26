@@ -1,4 +1,4 @@
-# DATABASE.md — BayarLah Full Schema
+# DATABASE.md — kolekduit Full Schema
 
 > Copy and run this SQL in Supabase SQL Editor in order.
 > Run sections one at a time. Check for errors before proceeding.
@@ -80,7 +80,7 @@ create table bill_members (
 ```
 
 Note: personal_token is the unique identifier in the member's personal link.
-Format: bayarlah.app/pay/[pay_code]?t=[personal_token]
+Format: kolekduit.app/pay/[pay_code]?t=[personal_token]
 
 ---
 
