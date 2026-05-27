@@ -3,9 +3,8 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Camera, RefreshCw, FileText } from "lucide-react";
-import Tesseract from "tesseract.js";
 import { ScanResult } from "@/types";
-import { parseReceiptText } from "@/lib/ocr";
+import { scanReceipt } from "@/lib/gemini";
 
 function applyGrayscaleAndContrast(data: Uint8ClampedArray, factor: number): void {
   for (let i = 0; i < data.length; i += 4) {
@@ -106,13 +105,7 @@ export default function ReceiptScanner({ onScanComplete, onManualEntry }: Props)
 
       setPreview(dataUrl);
 
-      const worker = await Tesseract.createWorker("eng");
-      await worker.setParameters({
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_COLUMN,
-      });
-      const { data: { text } } = await worker.recognize(file);
-      await worker.terminate();
-      const result = parseReceiptText(text);
+      const result = await scanReceipt(base64, mimeType);
       setScanState("idle");
       onScanComplete(result);
     } catch (err) {
