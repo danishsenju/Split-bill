@@ -20,10 +20,16 @@ export const metadata: Metadata = {
   title: "kolekduit — Settle hutang, tanpa drama.",
   description: "Split bil dengan mudah. Kongsi link, track siapa dah bayar, tanpa drama.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon.png",
+    shortcut: "/icons/icon.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "kolekduit",
+    startupImage: "/icons/apple-touch-icon.png",
   },
 };
 
