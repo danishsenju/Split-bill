@@ -55,14 +55,16 @@ export async function POST(req: NextRequest) {
         console.error(`${modelName} error full:`, e);
         const msg = e instanceof Error ? e.message : "";
         const is429 = msg.includes("429") || msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("resource_exhausted");
-        const is404 = msg.includes("404") || msg.toLowerCase().includes("not found");
-        if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) {
+        const isFatal = msg.includes("403") || msg.toLowerCase().includes("permission_denied");
+        if (!isFatal && modelName !== MODELS[MODELS.length - 1]) {
           if (is429) await new Promise((r) => setTimeout(r, 2000));
           continue;
         }
         throw e;
       }
     }
+
+    if (!textContent) throw new Error("Model tidak mengembalikan teks");
 
     const cleaned = textContent
       .replace(/^```json\s*/i, "")
