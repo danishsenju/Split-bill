@@ -6,6 +6,8 @@ export const maxDuration = 60;
 const PROMPT =
   'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price. Assume MYR.';
 
+const MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as { image: string; mimeType: string };
@@ -21,14 +23,27 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const result = await model.generateContent([
-      { inlineData: { mimeType, data: image } },
-      PROMPT,
-    ]);
-
-    const textContent = result.response.text().trim();
+    let textContent = "";
+    for (const modelName of MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent([
+          { inlineData: { mimeType, data: image } },
+          PROMPT,
+        ]);
+        textContent = result.response.text().trim();
+        break; // success — stop trying models
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        const is429 = msg.includes("429") || msg.toLowerCase().includes("quota");
+        if (is429 && modelName !== MODELS[MODELS.length - 1]) {
+          console.warn(`${modelName} quota exceeded, trying next model...`);
+          continue;
+        }
+        throw e; // rethrow if not 429 or last model
+      }
+    }
 
     if (!textContent) {
       return NextResponse.json(
@@ -67,9 +82,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gagal membaca resit";
-    console.error("Scan route error:", message, err);
+    console.error("Scan route error:", message);
+    const is429 = message.includes("429") || message.toLowerCase().includes("quota");
     return NextResponse.json(
-      { error: message },
+      { error: is429 ? "Quota AI habis. Cuba lagi dalam 30 saat." : message },
       { status: 500 }
     );
   }
