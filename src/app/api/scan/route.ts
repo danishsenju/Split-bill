@@ -6,7 +6,7 @@ export const maxDuration = 60;
 const PROMPT =
   'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price. Assume MYR.';
 
-const MODELS = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash-lite"];
+const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,11 +37,12 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "";
         const is429 = msg.includes("429") || msg.toLowerCase().includes("quota");
-        if (is429 && modelName !== MODELS[MODELS.length - 1]) {
-          console.warn(`${modelName} quota exceeded, trying next model...`);
+        const is404 = msg.includes("404") || msg.toLowerCase().includes("not found");
+        if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) {
+          console.warn(`${modelName} failed (${is429 ? "quota" : "not found"}), trying next...`);
           continue;
         }
-        throw e; // rethrow if not 429 or last model
+        throw e; // rethrow if not recoverable or last model
       }
     }
 
