@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 export const maxDuration = 60;
 
 const PROMPT =
-  'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price × qty. Assume MYR.';
+  'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. For EVERY item set qty=1 and price=the final RM amount charged for that line (the rightmost number on the item row, e.g. 4.33 for "0.446 KG x 9.70 = 4.33"). Never break out unit price, weight, or count separately. Assume MYR.';
 
 const MODELS = [
   "gemini-2.0-flash",
