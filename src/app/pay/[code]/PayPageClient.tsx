@@ -11,6 +11,7 @@ import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import SwipeConfirm from "@/components/ui/SwipeConfirm";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Confetti from "@/components/ui/Confetti";
+import Grainient from "@/components/ui/Grainient";
 
 interface OrganizerProfile {
   name: string;
@@ -345,25 +346,30 @@ export default function PayPageClient({
                 )}
               </div>
 
-              {/* Greeting + amount hero — full gradient background like monopo.vn */}
-              <div style={{ background: GRADIENT, borderRadius: "16px", padding: "28px 24px", marginBottom: "16px", textAlign: "center" }}>
-                <p style={{ color: "rgba(0,0,0,0.6)", fontSize: "14px", marginBottom: "4px" }}>
-                  Hai, <span style={{ color: "#000", fontWeight: 700 }}>{resolvedName}</span> 👋
-                </p>
-                <p style={{ color: "rgba(0,0,0,0.5)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: "16px" }}>
-                  Jumlah yang perlu dibayar
-                </p>
-                <span style={{
-                  display: "block",
-                  fontSize: "62px",
-                  fontWeight: 800,
-                  fontFamily: "var(--font-plus-jakarta), system-ui",
-                  lineHeight: 1,
-                  color: "#000",
-                  letterSpacing: "-0.02em",
-                }}>
-                  {formatRM(amountOwed)}
-                </span>
+              {/* Greeting + amount hero — Grainient member theme */}
+              <div style={{ position: "relative", overflow: "hidden", borderRadius: "16px", marginBottom: "16px" }}>
+                <div style={{ position: "absolute", inset: 0 }}>
+                  <Grainient color1="#af3131" color2="#342475" color3="#a88825" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={0.9} />
+                </div>
+                <div style={{ position: "relative", zIndex: 1, padding: "28px 24px", textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "14px", marginBottom: "4px" }}>
+                    Hai, <span style={{ color: "#ffffff", fontWeight: 700 }}>{resolvedName}</span> 👋
+                  </p>
+                  <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: "16px" }}>
+                    Jumlah yang perlu dibayar
+                  </p>
+                  <span style={{
+                    display: "block",
+                    fontSize: "62px",
+                    fontWeight: 800,
+                    fontFamily: "var(--font-plus-jakarta), system-ui",
+                    lineHeight: 1,
+                    color: "#ffffff",
+                    letterSpacing: "-0.02em",
+                  }}>
+                    {formatRM(amountOwed)}
+                  </span>
+                </div>
               </div>
 
               {/* Pay Code */}
@@ -470,33 +476,38 @@ export default function PayPageClient({
                 Kembali
               </motion.button>
 
-              {/* Amount hero — full gradient background */}
-              <div style={{ background: GRADIENT, borderRadius: "16px", padding: "28px 24px", textAlign: "center" }}>
-                <span style={{
-                  display: "inline-block",
-                  fontSize: "11px",
-                  padding: "5px 14px",
-                  borderRadius: PILL,
-                  border: "1px solid rgba(0,0,0,0.2)",
-                  color: "#000",
-                  background: "rgba(0,0,0,0.12)",
-                  marginBottom: "16px",
-                }}>
-                  Menunggu pengesahan
-                </span>
-                <span style={{
-                  display: "block",
-                  fontSize: "62px",
-                  fontWeight: 800,
-                  fontFamily: "var(--font-plus-jakarta), system-ui",
-                  lineHeight: 1,
-                  color: "#000",
-                  letterSpacing: "-0.02em",
-                  marginBottom: "8px",
-                }}>
-                  {formatRM(amountOwed)}
-                </span>
-                <p style={{ color: "rgba(0,0,0,0.55)", fontSize: "13px" }}>{bill.title}</p>
+              {/* Amount hero — Grainient member theme */}
+              <div style={{ position: "relative", overflow: "hidden", borderRadius: "16px" }}>
+                <div style={{ position: "absolute", inset: 0 }}>
+                  <Grainient color1="#af3131" color2="#342475" color3="#a88825" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={0.9} />
+                </div>
+                <div style={{ position: "relative", zIndex: 1, padding: "28px 24px", textAlign: "center" }}>
+                  <span style={{
+                    display: "inline-block",
+                    fontSize: "11px",
+                    padding: "5px 14px",
+                    borderRadius: PILL,
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    color: "#fff",
+                    background: "rgba(255,255,255,0.15)",
+                    marginBottom: "16px",
+                  }}>
+                    Menunggu pengesahan
+                  </span>
+                  <span style={{
+                    display: "block",
+                    fontSize: "62px",
+                    fontWeight: 800,
+                    fontFamily: "var(--font-plus-jakarta), system-ui",
+                    lineHeight: 1,
+                    color: "#ffffff",
+                    letterSpacing: "-0.02em",
+                    marginBottom: "8px",
+                  }}>
+                    {formatRM(amountOwed)}
+                  </span>
+                  <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px" }}>{bill.title}</p>
+                </div>
               </div>
 
               {/* Upload */}
@@ -654,15 +665,20 @@ export default function PayPageClient({
               <ArrowLeft size={14} /> Kembali
             </motion.button>
 
-            <div style={{ background: GRADIENT, borderRadius: "16px", padding: "28px 24px", textAlign: "center" }}>
-              <span style={{ display: "inline-block", fontSize: "11px", padding: "5px 14px", borderRadius: PILL, border: "1px solid rgba(0,0,0,0.2)", color: "#000", background: "rgba(0,0,0,0.12)", marginBottom: "16px" }}>
-                Menunggu pengesahan
-              </span>
-              <span style={{ display: "block", fontSize: "62px", fontWeight: 800, fontFamily: "var(--font-plus-jakarta), system-ui", lineHeight: 1, color: "#000", letterSpacing: "-0.02em", marginBottom: "8px" }}>
-                {formatRM(amountOwed)}
-              </span>
-              <p style={{ color: "rgba(0,0,0,0.55)", fontSize: "13px", marginBottom: "2px" }}>{bill.title}</p>
-              <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "11px" }}>Berdasarkan item yang anda tuntut</p>
+            <div style={{ position: "relative", overflow: "hidden", borderRadius: "16px" }}>
+              <div style={{ position: "absolute", inset: 0 }}>
+                <Grainient color1="#af3131" color2="#342475" color3="#a88825" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={0.9} />
+              </div>
+              <div style={{ position: "relative", zIndex: 1, padding: "28px 24px", textAlign: "center" }}>
+                <span style={{ display: "inline-block", fontSize: "11px", padding: "5px 14px", borderRadius: PILL, border: "1px solid rgba(255,255,255,0.25)", color: "#fff", background: "rgba(255,255,255,0.15)", marginBottom: "16px" }}>
+                  Menunggu pengesahan
+                </span>
+                <span style={{ display: "block", fontSize: "62px", fontWeight: 800, fontFamily: "var(--font-plus-jakarta), system-ui", lineHeight: 1, color: "#ffffff", letterSpacing: "-0.02em", marginBottom: "8px" }}>
+                  {formatRM(amountOwed)}
+                </span>
+                <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "13px", marginBottom: "2px" }}>{bill.title}</p>
+                <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "11px" }}>Berdasarkan item yang anda tuntut</p>
+              </div>
             </div>
 
             <div style={{ ...glass, padding: "20px 20px 16px" }}>
