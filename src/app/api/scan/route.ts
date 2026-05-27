@@ -9,8 +9,8 @@ const PROMPT =
 const MODELS = [
   "gemini-2.0-flash",
   "gemini-2.0-flash-lite",
-  "gemini-1.5-flash-8b",
-  "gemini-1.5-flash",
+  "gemini-2.0-flash-exp",
+  "gemini-2.5-flash",
 ];
 
 export async function POST(req: NextRequest) {
