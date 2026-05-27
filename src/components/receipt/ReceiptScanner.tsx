@@ -6,14 +6,56 @@ import { Camera, RefreshCw, FileText } from "lucide-react";
 import { ScanResult } from "@/types";
 import { scanReceipt } from "@/lib/gemini";
 
-// Resize image to max 1024px on longest side, output as JPEG base64
+function applyGrayscaleAndContrast(data: Uint8ClampedArray, factor: number): void {
+  for (let i = 0; i < data.length; i += 4) {
+    // ITU-R BT.601 luminance weights
+    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    const contrasted = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+    data[i] = contrasted;
+    data[i + 1] = contrasted;
+    data[i + 2] = contrasted;
+    // alpha unchanged
+  }
+}
+
+function applySharpen(data: Uint8ClampedArray, width: number, height: number): Uint8ClampedArray {
+  // Laplacian sharpening kernel: [0,-1,0,-1,5,-1,0,-1,0]
+  const output = new Uint8ClampedArray(data.length);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      if (x === 0 || x === width - 1 || y === 0 || y === height - 1) {
+        output[idx] = data[idx];
+        output[idx + 1] = data[idx + 1];
+        output[idx + 2] = data[idx + 2];
+        output[idx + 3] = data[idx + 3];
+        continue;
+      }
+      // Image is already grayscale so R=G=B — convolve only one channel
+      const sum = Math.min(255, Math.max(0,
+        -data[((y - 1) * width + x) * 4] +
+        -data[(y * width + (x - 1)) * 4] +
+        5 * data[idx] +
+        -data[(y * width + (x + 1)) * 4] +
+        -data[((y + 1) * width + x) * 4]
+      ));
+      output[idx] = sum;
+      output[idx + 1] = sum;
+      output[idx + 2] = sum;
+      output[idx + 3] = data[idx + 3];
+    }
+  }
+  return output;
+}
+
+// Resize to max 1600px, apply grayscale+contrast+sharpen, output as JPEG base64
 async function compressImage(file: File): Promise<{ base64: string; mimeType: string }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
-      const MAX = 1024;
+      const MAX = 1600;
       let { width, height } = img;
       if (width > MAX || height > MAX) {
         if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
@@ -25,6 +67,10 @@ async function compressImage(file: File): Promise<{ base64: string; mimeType: st
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas tidak disokong")); return; }
       ctx.drawImage(img, 0, 0, width, height);
+      const imageData = ctx.getImageData(0, 0, width, height);
+      applyGrayscaleAndContrast(imageData.data, 1.5);
+      const sharpened = applySharpen(imageData.data, width, height);
+      ctx.putImageData(new ImageData(sharpened, width, height), 0, 0);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
       const base64 = dataUrl.split(",")[1];
       if (!base64) { reject(new Error("Gagal compress gambar")); return; }

@@ -99,8 +99,9 @@ export async function POST(req: NextRequest) {
       geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
     if (!textContent) {
+      console.error("Gemini returned empty content. Full response:", JSON.stringify(geminiData));
       return NextResponse.json(
-        { error: "Gagal membaca resit" },
+        { error: "Gemini tidak dapat membaca teks dalam gambar. Cuba ambil gambar lebih terang dan jelas." },
         { status: 500 }
       );
     }
@@ -136,9 +137,10 @@ export async function POST(req: NextRequest) {
       total: parsed.total ?? 0,
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : "Gagal membaca resit";
     console.error("Scan route error:", err);
     return NextResponse.json(
-      { error: "Gagal membaca resit" },
+      { error: process.env.NODE_ENV === "development" ? message : "Gagal membaca resit" },
       { status: 500 }
     );
   }

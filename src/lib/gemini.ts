@@ -11,7 +11,8 @@ export async function scanReceipt(
   });
 
   if (!response.ok) {
-    throw new Error("Gagal membaca resit");
+    const body = await response.json().catch(() => null);
+    throw new Error((body as { error?: string })?.error ?? "Gagal membaca resit");
   }
 
   return response.json();
