@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-interface GeminiPart {
-  text?: string;
-  inlineData?: {
-    mimeType: string;
-    data: string;
-  };
-}
-
-interface GeminiContent {
-  parts: GeminiPart[];
-}
-
-interface GeminiCandidate {
-  content: GeminiContent;
-}
-
-interface GeminiResponse {
-  candidates?: GeminiCandidate[];
-  error?: { message: string };
-}
+export const maxDuration = 60;
 
 const PROMPT =
-  'Extract ALL line items from this receipt. Return ONLY valid JSON in this exact format: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price. Assume MYR if currency unclear. No markdown, no explanation.';
+  'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price. Assume MYR.';
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,83 +12,31 @@ export async function POST(req: NextRequest) {
     const { image, mimeType } = body;
 
     if (!image || !mimeType) {
-      return NextResponse.json(
-        { error: "Imej dan jenis MIME diperlukan" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Imej dan jenis MIME diperlukan" }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "Konfigurasi API tidak sah" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Konfigurasi API tidak sah" }, { status: 500 });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const payload = {
-      contents: [
-        {
-          parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: image,
-              },
-            },
-            {
-              text: PROMPT,
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        topP: 0.8,
-        maxOutputTokens: 2048,
-      },
-    };
+    const result = await model.generateContent([
+      { inlineData: { mimeType, data: image } },
+      PROMPT,
+    ]);
 
-    const geminiRes = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error("Gemini API error status:", geminiRes.status, errText);
-      const isTooBig = geminiRes.status === 413 || errText.includes("too large") || errText.includes("size");
-      return NextResponse.json(
-        { error: isTooBig ? "Gambar terlalu besar. Cuba gambar yang lebih kecil." : "Gagal membaca resit" },
-        { status: 500 }
-      );
-    }
-
-    const geminiData = (await geminiRes.json()) as GeminiResponse;
-
-    if (geminiData.error) {
-      console.error("Gemini error:", geminiData.error.message);
-      return NextResponse.json(
-        { error: `Gemini: ${geminiData.error.message}` },
-        { status: 500 }
-      );
-    }
-
-    const textContent =
-      geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const textContent = result.response.text().trim();
 
     if (!textContent) {
-      console.error("Gemini returned empty content. Full response:", JSON.stringify(geminiData));
       return NextResponse.json(
-        { error: "Gemini tidak dapat membaca teks dalam gambar. Cuba ambil gambar lebih terang dan jelas." },
+        { error: "Gemini tidak dapat membaca teks dalam gambar." },
         { status: 500 }
       );
     }
 
-    // Strip any accidental markdown code fences
     const cleaned = textContent
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
@@ -122,7 +52,6 @@ export async function POST(req: NextRequest) {
       total: number;
     };
 
-    // Ensure all items have an id
     const items = parsed.items.map((item, idx) => ({
       ...item,
       id: item.id ?? `item_${idx + 1}`,
@@ -138,7 +67,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gagal membaca resit";
-    console.error("Scan route error:", err);
+    console.error("Scan route error:", message, err);
     return NextResponse.json(
       { error: process.env.NODE_ENV === "development" ? message : "Gagal membaca resit" },
       { status: 500 }
