@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useMotionValue, animate } from "framer-motion";
-import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Bill, Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { formatRM, getDaysRemaining } from "@/lib/utils";
@@ -36,9 +37,11 @@ interface MiniBillCardProps {
   bill: Bill;
   delay: number;
   t: typeof dashboardT[keyof typeof dashboardT];
+  onDelete: (id: string) => void;
 }
 
-function MiniBillCard({ bill, delay, t }: MiniBillCardProps) {
+function MiniBillCard({ bill, delay, t, onDelete }: MiniBillCardProps) {
+  const router = useRouter();
   const members = bill.bill_members ?? [];
   const paidCount = members.filter((m) => m.paid).length;
   const totalCount = members.length;
@@ -46,15 +49,64 @@ function MiniBillCard({ bill, delay, t }: MiniBillCardProps) {
   const daysLeft = getDaysRemaining(bill.due_date);
   const isOverdue = daysLeft < 0;
 
+  const [showMenu, setShowMenu] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isPressing, setIsPressing] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const didLongPress = useRef(false);
+
+  function startPress() {
+    didLongPress.current = false;
+    setIsPressing(true);
+    timerRef.current = setTimeout(() => {
+      didLongPress.current = true;
+      navigator.vibrate?.(40);
+      setShowMenu(true);
+      setIsPressing(false);
+    }, 500);
+  }
+
+  function cancelPress() {
+    clearTimeout(timerRef.current);
+    setIsPressing(false);
+  }
+
+  function handleClick() {
+    if (didLongPress.current) {
+      didLongPress.current = false;
+      return;
+    }
+    router.push(`/bills/${bill.id}`);
+  }
+
+  function closeMenu() {
+    setShowMenu(false);
+    setConfirmDelete(false);
+  }
+
+  async function handleDelete() {
+    const supabase = createClient();
+    await supabase.from("bills").delete().eq("id", bill.id);
+    closeMenu();
+    onDelete(bill.id);
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, ease: [0.23, 1, 0.32, 1], duration: 0.4 }}
-    >
-      <Link href={`/bills/${bill.id}`}>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay, ease: [0.23, 1, 0.32, 1], duration: 0.4 }}
+        style={{ scale: isPressing ? 0.96 : 1, transition: "scale 150ms cubic-bezier(0.23,1,0.32,1)" }}
+        onPointerDown={startPress}
+        onPointerUp={cancelPress}
+        onPointerLeave={cancelPress}
+        onPointerCancel={cancelPress}
+        onPointerMove={cancelPress}
+        onClick={handleClick}
+      >
         <NoiseBackground
-          containerClassName="active:scale-[0.97] select-none"
+          containerClassName="select-none cursor-pointer"
           className="flex flex-col gap-3 p-3"
         >
           <CategoryIcon
@@ -111,8 +163,139 @@ function MiniBillCard({ bill, delay, t }: MiniBillCardProps) {
             </span>
           </div>
         </NoiseBackground>
-      </Link>
-    </motion.div>
+      </motion.div>
+
+      {/* ── Long-press context menu ─────────────────────────────────── */}
+      <AnimatePresence>
+        {showMenu && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={closeMenu}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.65)",
+                zIndex: 50,
+              }}
+            />
+
+            {/* Bottom sheet */}
+            <motion.div
+              key="sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.35 }}
+              style={{
+                position: "fixed",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 51,
+                background: "#111111",
+                borderTop: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "24px 24px 0 0",
+                padding: "20px 20px calc(env(safe-area-inset-bottom) + 20px)",
+              }}
+            >
+              {/* Bill title context */}
+              <p
+                className="font-clash font-bold text-frost mb-5 truncate"
+                style={{ fontSize: "16px" }}
+              >
+                {bill.title}
+              </p>
+
+              {!confirmDelete ? (
+                <div className="flex flex-col gap-2">
+                  {/* Edit */}
+                  <button
+                    onClick={() => { closeMenu(); router.push(`/bills/${bill.id}`); }}
+                    className="flex items-center gap-3 w-full font-dm font-medium text-sm active:opacity-60"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: "14px",
+                      padding: "16px",
+                      color: "#ffffff",
+                      transition: "opacity 150ms",
+                    }}
+                  >
+                    <Pencil size={18} />
+                    Edit Bil
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex items-center gap-3 w-full font-dm font-medium text-sm active:opacity-60"
+                    style={{
+                      background: "rgba(239,68,68,0.1)",
+                      border: "1px solid rgba(239,68,68,0.2)",
+                      borderRadius: "14px",
+                      padding: "16px",
+                      color: "#ef4444",
+                      transition: "opacity 150ms",
+                    }}
+                  >
+                    <Trash2 size={18} />
+                    Padam Bil
+                  </button>
+
+                  {/* Cancel */}
+                  <button
+                    onClick={closeMenu}
+                    className="w-full font-dm text-sm active:opacity-50 mt-1"
+                    style={{ color: "rgba(255,255,255,0.4)", padding: "12px" }}
+                  >
+                    Batal
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <p
+                    className="font-dm text-center mb-2"
+                    style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px" }}
+                  >
+                    Anda pasti nak padam bil ini?
+                  </p>
+
+                  {/* Confirm delete */}
+                  <button
+                    onClick={handleDelete}
+                    className="w-full font-dm font-semibold text-sm active:opacity-60"
+                    style={{
+                      background: "#ef4444",
+                      borderRadius: "14px",
+                      padding: "16px",
+                      color: "#ffffff",
+                      transition: "opacity 150ms",
+                    }}
+                  >
+                    Ya, Padam
+                  </button>
+
+                  {/* Back */}
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="w-full font-dm text-sm active:opacity-50"
+                    style={{ color: "rgba(255,255,255,0.4)", padding: "12px" }}
+                  >
+                    Tak, Batal
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -128,6 +311,10 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
   const [bills, setBills] = useState<Bill[]>(initialBills);
   const { lang } = useLang();
   const t = dashboardT[lang];
+
+  function handleDeleteBill(id: string) {
+    setBills((prev) => prev.filter((b) => b.id !== id));
+  }
 
   // Supabase realtime subscription
   useEffect(() => {
@@ -458,7 +645,7 @@ export default function DashboardClient({ profile, bills: initialBills, userId }
           /* ── 2-column bills grid ─────────────────────────────────────── */
           <div className="grid grid-cols-2 gap-3">
             {bills.map((bill, i) => (
-              <MiniBillCard key={bill.id} bill={bill} delay={i * 0.05} t={t} />
+              <MiniBillCard key={bill.id} bill={bill} delay={i * 0.05} t={t} onDelete={handleDeleteBill} />
             ))}
           </div>
         )}
