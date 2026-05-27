@@ -47,20 +47,11 @@ export async function POST(req: NextRequest) {
         textContent = result.text ?? "";
         break;
       } catch (e) {
+        console.error(`${modelName} error full:`, e);
         const msg = e instanceof Error ? e.message : "";
-        const is403 =
-          msg.includes("403") ||
-          msg.toLowerCase().includes("api key") ||
-          msg.toLowerCase().includes("permission");
-        const is429 =
-          msg.includes("429") ||
-          (msg.toLowerCase().includes("quota") && !is403);
-        const is404 =
-          msg.includes("404") || msg.toLowerCase().includes("not found");
-        if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) {
-          console.warn(`${modelName} failed, trying next model...`);
-          continue;
-        }
+        const is429 = msg.includes("429") || msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("resource_exhausted");
+        const is404 = msg.includes("404") || msg.toLowerCase().includes("not found");
+        if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) continue;
         throw e;
       }
     }
@@ -94,20 +85,14 @@ export async function POST(req: NextRequest) {
       total: parsed.total ?? 0,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Gagal membaca resit";
-    console.error("Scan route error:", message);
-    const is429 =
-      message.includes("429") ||
-      message.toLowerCase().includes("resource_exhausted");
-    const is403 =
-      message.includes("403") ||
-      message.toLowerCase().includes("api_key") ||
-      message.toLowerCase().includes("permission_denied");
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Scan route error full:", err);
+    const is429 = message.includes("429") || message.toLowerCase().includes("resource_exhausted");
+    const is403 = message.includes("403") || message.toLowerCase().includes("permission_denied");
     let userMessage: string;
     if (is429) userMessage = "Quota AI habis. Cuba lagi dalam 30 saat.";
-    else if (is403)
-      userMessage = `API key tidak sah. Semak GEMINI_API_KEY dalam Vercel. (${message})`;
-    else userMessage = message;
+    else if (is403) userMessage = "API key tidak sah. Semak GEMINI_API_KEY dalam Vercel.";
+    else userMessage = "Gagal membaca resit. Cuba lagi atau masuk manual.";
     return NextResponse.json({ error: userMessage }, { status: 500 });
   }
 }
