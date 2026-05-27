@@ -6,7 +6,12 @@ export const maxDuration = 60;
 const PROMPT =
   'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price × qty. Assume MYR.';
 
-const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+const MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-flash",
+];
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,7 +56,10 @@ export async function POST(req: NextRequest) {
         const msg = e instanceof Error ? e.message : "";
         const is429 = msg.includes("429") || msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("resource_exhausted");
         const is404 = msg.includes("404") || msg.toLowerCase().includes("not found");
-        if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) continue;
+        if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) {
+          if (is429) await new Promise((r) => setTimeout(r, 2000));
+          continue;
+        }
         throw e;
       }
     }
