@@ -77,9 +77,10 @@ export async function POST(req: NextRequest) {
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      console.error("Gemini API error:", errText);
+      console.error("Gemini API error status:", geminiRes.status, errText);
+      const isTooBig = geminiRes.status === 413 || errText.includes("too large") || errText.includes("size");
       return NextResponse.json(
-        { error: "Gagal membaca resit" },
+        { error: isTooBig ? "Gambar terlalu besar. Cuba gambar yang lebih kecil." : "Gagal membaca resit" },
         { status: 500 }
       );
     }
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     if (geminiData.error) {
       console.error("Gemini error:", geminiData.error.message);
       return NextResponse.json(
-        { error: "Gagal membaca resit" },
+        { error: `Gemini: ${geminiData.error.message}` },
         { status: 500 }
       );
     }

@@ -6,6 +6,35 @@ import { Camera, RefreshCw, FileText } from "lucide-react";
 import { ScanResult } from "@/types";
 import { scanReceipt } from "@/lib/gemini";
 
+// Resize image to max 1024px on longest side, output as JPEG base64
+async function compressImage(file: File): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const MAX = 1024;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+        else { width = Math.round((width * MAX) / height); height = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas tidak disokong")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      const base64 = dataUrl.split(",")[1];
+      if (!base64) { reject(new Error("Gagal compress gambar")); return; }
+      resolve({ base64, mimeType: "image/jpeg" });
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Gagal baca gambar")); };
+    img.src = objectUrl;
+  });
+}
+
 interface Props {
   onScanComplete: (result: ScanResult) => void;
   onManualEntry: () => void;
@@ -25,23 +54,11 @@ export default function ReceiptScanner({ onScanComplete, onManualEntry }: Props)
     setPreview(null);
 
     try {
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          // strip the data url prefix: "data:image/jpeg;base64,..."
-          const b64 = result.split(",")[1];
-          if (b64) resolve(b64);
-          else reject(new Error("Gagal baca fail"));
-        };
-        reader.onerror = () => reject(new Error("Gagal baca fail"));
-        reader.readAsDataURL(file);
-      });
+      const { base64, mimeType } = await compressImage(file);
 
-      // show preview
-      setPreview(`data:${file.type};base64,${base64}`);
+      setPreview(`data:${mimeType};base64,${base64}`);
 
-      const result = await scanReceipt(base64, file.type || "image/jpeg");
+      const result = await scanReceipt(base64, mimeType);
       setScanState("idle");
       onScanComplete(result);
     } catch (err) {
@@ -67,7 +84,7 @@ export default function ReceiptScanner({ onScanComplete, onManualEntry }: Props)
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,video/*"
+        accept="image/*"
         capture="environment"
         className="hidden"
         onChange={handleInputChange}
