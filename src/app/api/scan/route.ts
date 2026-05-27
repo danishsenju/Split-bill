@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : "Gagal membaca resit";
     console.error("Scan route error:", message, err);
     return NextResponse.json(
-      { error: process.env.NODE_ENV === "development" ? message : "Gagal membaca resit" },
+      { error: message },
       { status: 500 }
     );
   }
