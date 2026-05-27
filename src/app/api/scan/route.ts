@@ -1,12 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Tesseract from "tesseract.js";
 
 export const maxDuration = 60;
 
-const PROMPT =
-  'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price. Assume MYR.';
+interface ScanResult {
+  storeName: string;
+  items: Array<{ id: string; name: string; price: number; qty: number }>;
+  subtotal: number;
+  tax: number;
+  serviceCharge: number;
+  total: number;
+}
 
-const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+const SKIP_RE = /total|subtotal|tax|gst|sst|service|charge|amount|discount|jumlah|cukai|balance|change|cash|bayaran|tunai/i;
+const TAX_RE = /tax|gst|sst|cukai/i;
+const SERVICE_RE = /service|charge/i;
+const PRICE_RE = /(\d+\.\d{2})/g;
+
+function parseReceiptText(text: string): ScanResult {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const items: ScanResult["items"] = [];
+  let tax = 0;
+  let serviceCharge = 0;
+  let storeName = "";
+
+  for (const line of lines) {
+    const prices = Array.from(line.matchAll(PRICE_RE)).map((m) => parseFloat(m[1]));
+    if (!prices.length) {
+      // First non-price line is likely the store name
+      if (!storeName) storeName = line;
+      continue;
+    }
+
+    const price = prices[prices.length - 1]; // rightmost number is the price
+
+    if (SKIP_RE.test(line)) {
+      if (TAX_RE.test(line)) tax = price;
+      if (SERVICE_RE.test(line)) serviceCharge = price;
+      continue;
+    }
+
+    const name =
+      line
+        .replace(PRICE_RE, "")
+        .replace(/\s+/g, " ")
+        .trim() || "Item";
+
+    items.push({ id: String(items.length + 1), name, price, qty: 1 });
+  }
+
+  const subtotal = parseFloat(
+    items.reduce((s, i) => s + i.price, 0).toFixed(2)
+  );
+  const total = parseFloat((subtotal + tax + serviceCharge).toFixed(2));
+
+  return { storeName, items, subtotal, tax, serviceCharge, total };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,80 +63,33 @@ export async function POST(req: NextRequest) {
     const { image, mimeType } = body;
 
     if (!image || !mimeType) {
-      return NextResponse.json({ error: "Imej dan jenis MIME diperlukan" }, { status: 400 });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "Konfigurasi API tidak sah" }, { status: 500 });
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    let textContent = "";
-    for (const modelName of MODELS) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent([
-          { inlineData: { mimeType, data: image } },
-          PROMPT,
-        ]);
-        textContent = result.response.text().trim();
-        break; // success — stop trying models
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "";
-        const is429 = msg.includes("429") || msg.toLowerCase().includes("quota");
-        const is404 = msg.includes("404") || msg.toLowerCase().includes("not found");
-        if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) {
-          console.warn(`${modelName} failed (${is429 ? "quota" : "not found"}), trying next...`);
-          continue;
-        }
-        throw e; // rethrow if not recoverable or last model
-      }
-    }
-
-    if (!textContent) {
       return NextResponse.json(
-        { error: "Gemini tidak dapat membaca teks dalam gambar." },
-        { status: 500 }
+        { error: "Imej dan jenis MIME diperlukan" },
+        { status: 400 }
       );
     }
 
-    const cleaned = textContent
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
+    const imageBuffer = Buffer.from(image, "base64");
 
-    const parsed = JSON.parse(cleaned) as {
-      storeName: string;
-      items: Array<{ id: string; name: string; price: number; qty: number }>;
-      subtotal: number;
-      tax: number;
-      serviceCharge: number;
-      total: number;
-    };
+    const worker = await Tesseract.createWorker("eng");
+    const {
+      data: { text },
+    } = await worker.recognize(imageBuffer);
+    await worker.terminate();
 
-    const items = parsed.items.map((item, idx) => ({
-      ...item,
-      id: item.id ?? `item_${idx + 1}`,
-    }));
+    if (!text.trim()) {
+      return NextResponse.json(
+        { error: "Teks tidak dapat dibaca dalam gambar. Cuba gambar yang lebih jelas." },
+        { status: 422 }
+      );
+    }
 
-    return NextResponse.json({
-      storeName: parsed.storeName ?? "",
-      items,
-      subtotal: parsed.subtotal ?? 0,
-      tax: parsed.tax ?? 0,
-      serviceCharge: parsed.serviceCharge ?? 0,
-      total: parsed.total ?? 0,
-    });
+    const result = parseReceiptText(text);
+
+    return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gagal membaca resit";
     console.error("Scan route error:", message);
-    const is429 = message.includes("429") || message.toLowerCase().includes("quota");
-    return NextResponse.json(
-      { error: is429 ? "Quota AI habis. Cuba lagi dalam 30 saat." : message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
