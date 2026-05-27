@@ -3,7 +3,7 @@
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Copy, Check, Upload, X, ArrowLeft, ChevronRight } from "lucide-react";
+import { Copy, Check, Upload, X, ArrowLeft, ChevronRight, Download } from "lucide-react";
 import { Bill, BillMember } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { formatRM, formatDaysRemaining, getDaysRemaining, maskAccount } from "@/lib/utils";
@@ -116,6 +116,7 @@ export default function PayPageClient({
   const [confetti, setConfetti] = useState(false);
   const [dismissPromo, setDismissPromo] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const daysLeft = getDaysRemaining(bill.due_date);
   const isOverdue = daysLeft < 0;
@@ -164,6 +165,109 @@ export default function PayPageClient({
       await navigator.clipboard.writeText(organizerProfile.bank_account);
       setCopiedAccount(true);
       setTimeout(() => setCopiedAccount(false), 2000);
+    }
+  }
+
+  async function shareBlob(blob: Blob, filename: string, title: string) {
+    const file = new File([blob], filename, { type: blob.type });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function handleSaveQR() {
+    if (!organizerProfile?.qr_url || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch(organizerProfile.qr_url);
+      const blob = await res.blob();
+      await shareBlob(blob, "duitnow-qr.png", "DuitNow QR");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveBankCard() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const W = 800, H = 440;
+      const canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d")!;
+
+      // Background
+      ctx.fillStyle = "#111111";
+      ctx.beginPath();
+      ctx.roundRect(0, 0, W, H, 24);
+      ctx.fill();
+
+      // Deep Ocean gradient top bar
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, "rgb(160,224,171)");
+      grad.addColorStop(0.5, "rgb(255,172,46)");
+      grad.addColorStop(1, "rgb(165,45,37)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, 12);
+
+      // Title
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
+      ctx.fillText("Maklumat Bayaran", 48, 76);
+
+      // Branding (top right)
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.font = "18px system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("kolekduit", W - 48, 76);
+      ctx.textAlign = "left";
+
+      // Rows: Bank, Account, Holder
+      const rows: Array<{ label: string; value: string; y: number; mono?: boolean; large?: boolean }> = [
+        { label: "Bank", value: organizerProfile?.bank_name ?? "—", y: 140 },
+        { label: "No. Akaun", value: organizerProfile?.bank_account ?? "—", y: 205, mono: true, large: true },
+        { label: "Nama Pemegang", value: organizerProfile?.bank_holder_name ?? "—", y: 298 },
+      ];
+      rows.forEach(({ label, value, y, mono, large }) => {
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillText(label.toUpperCase(), 48, y);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `${large ? "bold" : "500"} ${large ? 36 : 22}px ${mono ? "monospace" : "system-ui, sans-serif"}`;
+        ctx.fillText(value, 48, y + (large ? 46 : 30));
+      });
+
+      // Divider
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(48, 345); ctx.lineTo(W - 48, 345); ctx.stroke();
+
+      // Jumlah (left) + Kod Rujukan (right)
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.font = "14px system-ui, sans-serif";
+      ctx.fillText("Jumlah", 48, 375);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 24px system-ui, sans-serif";
+      ctx.fillText(formatRM(amountOwed), 48, 405);
+
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.font = "14px system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("Kod Rujukan", W - 48, 375);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 24px monospace";
+      ctx.fillText(bill.pay_code, W - 48, 405);
+      ctx.textAlign = "left";
+
+      const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), "image/png"));
+      await shareBlob(blob, "kolekduit-payment.png", "Maklumat Bayaran");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -319,6 +423,10 @@ export default function PayPageClient({
                       {copiedAccount ? <Check size={15} style={{ color: "#a0e0ab" }} /> : <Copy size={15} />}
                       {copiedAccount ? "Disalin!" : "Salin No. Akaun"}
                     </motion.button>
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveBankCard} disabled={saving} style={{ ...ghostPill, padding: "14px 24px", opacity: saving ? 0.6 : 1 }}>
+                      <Download size={15} />
+                      {saving ? "Menyimpan..." : "Simpan Maklumat"}
+                    </motion.button>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
@@ -332,6 +440,10 @@ export default function PayPageClient({
                         <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center" }}>QR tidak tersedia</p>
                       </div>
                     )}
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveQR} disabled={saving || !organizerProfile?.qr_url} style={{ ...ghostPill, padding: "14px 24px", opacity: saving || !organizerProfile?.qr_url ? 0.6 : 1 }}>
+                      <Download size={15} />
+                      {saving ? "Menyimpan..." : "Simpan QR"}
+                    </motion.button>
                     <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Imbas dengan app bank anda</p>
                   </div>
                 )}
