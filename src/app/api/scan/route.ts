@@ -6,7 +6,7 @@ export const maxDuration = 60;
 const PROMPT =
   'Extract ALL line items from this receipt. Return ONLY valid JSON, no markdown: {"storeName": string, "items": [{"id": string, "name": string, "price": number, "qty": number}], "subtotal": number, "tax": number, "serviceCharge": number, "total": number}. Price = unit price. Assume MYR.';
 
-const MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+const MODELS = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash-lite"];
 
 export async function POST(req: NextRequest) {
   try {
