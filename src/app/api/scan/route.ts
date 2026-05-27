@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 export const maxDuration = 60;
 
@@ -27,22 +27,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey });
     let textContent = "";
 
     for (const modelName of MODELS) {
       try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent([
-          { inlineData: { mimeType, data: image } },
-          PROMPT,
-        ]);
-        textContent = result.response.text().trim();
+        const result = await ai.models.generateContent({
+          model: modelName,
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { inlineData: { mimeType, data: image } },
+                { text: PROMPT },
+              ],
+            },
+          ],
+        });
+        textContent = result.text ?? "";
         break;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "";
-        const is429 = msg.includes("429") || msg.toLowerCase().includes("quota");
-        const is404 = msg.includes("404") || msg.toLowerCase().includes("not found");
+        const is403 =
+          msg.includes("403") ||
+          msg.toLowerCase().includes("api key") ||
+          msg.toLowerCase().includes("permission");
+        const is429 =
+          msg.includes("429") ||
+          (msg.toLowerCase().includes("quota") && !is403);
+        const is404 =
+          msg.includes("404") || msg.toLowerCase().includes("not found");
         if ((is429 || is404) && modelName !== MODELS[MODELS.length - 1]) {
           console.warn(`${modelName} failed, trying next model...`);
           continue;
@@ -82,10 +96,18 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gagal membaca resit";
     console.error("Scan route error:", message);
-    const is429 = message.includes("429") || message.toLowerCase().includes("quota");
-    return NextResponse.json(
-      { error: is429 ? "Quota AI habis. Cuba lagi dalam 30 saat." : message },
-      { status: 500 }
-    );
+    const is429 =
+      message.includes("429") ||
+      message.toLowerCase().includes("resource_exhausted");
+    const is403 =
+      message.includes("403") ||
+      message.toLowerCase().includes("api_key") ||
+      message.toLowerCase().includes("permission_denied");
+    let userMessage: string;
+    if (is429) userMessage = "Quota AI habis. Cuba lagi dalam 30 saat.";
+    else if (is403)
+      userMessage = `API key tidak sah. Semak GEMINI_API_KEY dalam Vercel. (${message})`;
+    else userMessage = message;
+    return NextResponse.json({ error: userMessage }, { status: 500 });
   }
 }
