@@ -97,13 +97,20 @@ function MiniBillCard({ bill, delay, t, onDelete }: MiniBillCardProps) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, ease: [0.23, 1, 0.32, 1], duration: 0.4 }}
-        style={{ scale: isPressing ? 0.96 : 1, transition: "scale 150ms cubic-bezier(0.23,1,0.32,1)" }}
+        style={{
+          scale: isPressing ? 0.96 : 1,
+          transition: "scale 150ms cubic-bezier(0.23,1,0.32,1)",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          WebkitTouchCallout: "none",
+        } as React.CSSProperties}
         onPointerDown={startPress}
         onPointerUp={cancelPress}
         onPointerLeave={cancelPress}
         onPointerCancel={cancelPress}
         onPointerMove={cancelPress}
         onClick={handleClick}
+        onContextMenu={(e) => e.preventDefault()}
       >
         <NoiseBackground
           containerClassName="select-none cursor-pointer"
