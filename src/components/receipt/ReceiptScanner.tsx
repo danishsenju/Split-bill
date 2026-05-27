@@ -106,7 +106,12 @@ export default function ReceiptScanner({ onScanComplete, onManualEntry }: Props)
 
       setPreview(dataUrl);
 
-      const { data: { text } } = await Tesseract.recognize(dataUrl, "eng");
+      const worker = await Tesseract.createWorker("eng");
+      await worker.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_COLUMN,
+      });
+      const { data: { text } } = await worker.recognize(file);
+      await worker.terminate();
       const result = parseReceiptText(text);
       setScanState("idle");
       onScanComplete(result);
