@@ -3,8 +3,9 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Camera, RefreshCw, FileText } from "lucide-react";
+import Tesseract from "tesseract.js";
 import { ScanResult } from "@/types";
-import { scanReceipt } from "@/lib/gemini";
+import { parseReceiptText } from "@/lib/ocr";
 
 function applyGrayscaleAndContrast(data: Uint8ClampedArray, factor: number): void {
   for (let i = 0; i < data.length; i += 4) {
@@ -101,10 +102,12 @@ export default function ReceiptScanner({ onScanComplete, onManualEntry }: Props)
 
     try {
       const { base64, mimeType } = await compressImage(file);
+      const dataUrl = `data:${mimeType};base64,${base64}`;
 
-      setPreview(`data:${mimeType};base64,${base64}`);
+      setPreview(dataUrl);
 
-      const result = await scanReceipt(base64, mimeType);
+      const { data: { text } } = await Tesseract.recognize(dataUrl, "eng");
+      const result = parseReceiptText(text);
       setScanState("idle");
       onScanComplete(result);
     } catch (err) {
