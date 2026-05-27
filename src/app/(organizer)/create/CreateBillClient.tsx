@@ -9,6 +9,7 @@ import { generatePayCode } from "@/lib/paycode";
 import { formatRM } from "@/lib/utils";
 import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import ReceiptScanner from "@/components/receipt/ReceiptScanner";
+import ReceiptEditList from "@/components/receipt/ReceiptEditList";
 import WAToneSelector from "@/components/organizer/WAToneSelector";
 import Link from "next/link";
 import { useLang, createT } from "@/lib/language-context";
@@ -548,25 +549,35 @@ export default function CreateBillClient() {
                     })}
                   />
                 ) : (
-                  <div
-                    className="flex items-center justify-between p-4"
-                    style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
-                  >
-                    <div>
-                      <p className="font-dm text-frost font-medium text-sm">
-                        {scanResult.storeName || "Resit"} — {scanResult.items.length} item
-                      </p>
-                      <p className="font-clash font-bold text-frost mt-0.5" style={{ fontSize: "18px" }}>
-                        {formatRM(scanResult.total)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setScanResult(null)}
-                      className="font-dm text-whisper active:opacity-50"
-                      style={{ fontSize: "13px", transition: "opacity 150ms" }}
+                  <div className="flex flex-col gap-4">
+                    <div
+                      className="flex items-center justify-between p-4"
+                      style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
                     >
-                      {t.rescanBtn}
-                    </button>
+                      <div>
+                        <p className="font-dm text-frost font-medium text-sm">
+                          {scanResult.storeName || "Resit"} — {scanResult.items.length} item
+                        </p>
+                        <p className="font-clash font-bold text-frost mt-0.5" style={{ fontSize: "18px" }}>
+                          {formatRM(scanResult.total)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setScanResult(null)}
+                        className="font-dm text-whisper active:opacity-50"
+                        style={{ fontSize: "13px", transition: "opacity 150ms" }}
+                      >
+                        {t.rescanBtn}
+                      </button>
+                    </div>
+                    <ReceiptEditList
+                      items={scanResult.items}
+                      onChange={(newItems) => {
+                        const subtotal = newItems.reduce((s, i) => s + i.price * i.qty, 0);
+                        const total = subtotal + scanResult.tax + scanResult.serviceCharge;
+                        setScanResult({ ...scanResult, items: newItems, subtotal, total });
+                      }}
+                    />
                   </div>
                 )}
               </motion.div>
