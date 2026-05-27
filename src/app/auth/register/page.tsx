@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Loader2, Upload, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, Loader2, Upload, ChevronDown, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PaymentMethod } from "@/types";
 
@@ -21,17 +21,26 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE_OUT } },
 };
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+
+  // Pre-fill from pay page URL params
+  const [memberToken, setMemberToken] = useState("");
+  const [prefillFromBill, setPrefillFromBill] = useState(false);
 
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("bank");
   const [bankName, setBankName] = useState(BANKS[0]);
@@ -40,6 +49,20 @@ export default function RegisterPage() {
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [qrPreview, setQrPreview] = useState("");
   const [showBankPicker, setShowBankPicker] = useState(false);
+
+  useEffect(() => {
+    const prefillName = searchParams.get("name");
+    const token = searchParams.get("token");
+    if (prefillName) {
+      setName(decodeURIComponent(prefillName));
+      setPrefillFromBill(true);
+    }
+    if (token) setMemberToken(decodeURIComponent(token));
+  }, [searchParams]);
+
+  function validateUsername(u: string) {
+    return /^[a-zA-Z0-9_]{3,20}$/.test(u);
+  }
 
   function handleQrChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -50,16 +73,37 @@ export default function RegisterPage() {
     reader.readAsDataURL(file);
   }
 
+  function canProceedStep1() {
+    return (
+      name.trim().length >= 2 &&
+      validateUsername(username) &&
+      email.trim().length > 0 &&
+      password.length >= 6 &&
+      password === confirmPassword
+    );
+  }
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError("Kata laluan tidak sepadan");
+      return;
+    }
     setLoading(true);
     setError("");
 
     try {
       const supabase = createClient();
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+      // Check username uniqueness
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username.toLowerCase())
+        .maybeSingle();
+      if (existing) throw new Error("Username sudah digunakan. Pilih username lain.");
 
+      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
       if (authError) throw new Error(authError.message);
       if (!authData.user) throw new Error("Pendaftaran gagal");
 
@@ -76,7 +120,8 @@ export default function RegisterPage() {
 
       const { error: profileError } = await supabase.from("profiles").insert({
         id: authData.user.id,
-        name,
+        name: name.trim(),
+        username: username.toLowerCase(),
         email,
         phone,
         payment_method: paymentMethod,
@@ -87,6 +132,15 @@ export default function RegisterPage() {
       });
 
       if (profileError) throw new Error("Gagal simpan profil: " + profileError.message);
+
+      // If registering from a pay page link, link the bill_member
+      if (memberToken) {
+        await fetch("/api/member/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: memberToken, userId: authData.user.id, name: name.trim() }),
+        });
+      }
 
       router.push("/dashboard");
       router.refresh();
@@ -99,18 +153,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-dvh bg-midnight relative overflow-hidden flex items-center justify-center px-5 py-12">
       {/* Atmospheric orbs */}
-      <div
-        className="absolute top-[-15%] left-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none orb-animate"
-        style={{ background: "rgb(160, 224, 171)", opacity: 0.16, filter: "blur(130px)" }}
-      />
-      <div
-        className="absolute bottom-[-20%] right-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none orb-animate-slow"
-        style={{ background: "rgb(255, 140, 40)", opacity: 0.13, filter: "blur(130px)" }}
-      />
-      <div
-        className="absolute top-[40%] right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none"
-        style={{ background: "rgb(165, 45, 37)", opacity: 0.09, filter: "blur(100px)" }}
-      />
+      <div className="absolute top-[-15%] left-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: "rgb(160, 224, 171)", opacity: 0.16, filter: "blur(130px)" }} />
+      <div className="absolute bottom-[-20%] right-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: "rgb(255, 140, 40)", opacity: 0.13, filter: "blur(130px)" }} />
+      <div className="absolute top-[40%] right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: "rgb(165, 45, 37)", opacity: 0.09, filter: "blur(100px)" }} />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -121,19 +166,12 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight mb-2">
-            <span
-              style={{
-                background: "var(--gradient-deep-ocean)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              kolekduit
+            <span style={{ background: "var(--gradient-deep-ocean)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              bayarlah
             </span>
           </h1>
           <p className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>
-            Daftar akaun organizer
+            {prefillFromBill ? "Daftar untuk tracking hutang anda" : "Daftar akaun baru"}
           </p>
         </div>
 
@@ -145,10 +183,7 @@ export default function RegisterPage() {
             </span>
             <span className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>{step}/2</span>
           </div>
-          <div
-            className="h-[2px] rounded-full overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.08)" }}
-          >
+          <div className="h-[2px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
             <motion.div
               className="h-full rounded-full"
               animate={{ width: step === 1 ? "50%" : "100%" }}
@@ -159,14 +194,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Glass card */}
-        <div
-          className="rounded-[10px] p-7"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            backdropFilter: "blur(24px)",
-          }}
-        >
+        <div className="rounded-[10px] p-7" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(24px)" }}>
           <form onSubmit={handleRegister}>
             <AnimatePresence mode="wait">
               {step === 1 && (
@@ -183,8 +211,17 @@ export default function RegisterPage() {
                     animate="visible"
                     variants={{ visible: { transition: { staggerChildren: 0.055 } } }}
                   >
+                    {/* Name — pre-filled from bill if applicable */}
                     <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
-                      <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Nama Penuh</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Nama Penuh</label>
+                        {prefillFromBill && (
+                          <span className="flex items-center gap-1 text-xs" style={{ color: "rgba(160,224,171,0.8)" }}>
+                            <Info size={11} />
+                            Dari bil penganjur — boleh tukar
+                          </span>
+                        )}
+                      </div>
                       <RegInput
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -193,6 +230,23 @@ export default function RegisterPage() {
                       />
                     </motion.div>
 
+                    {/* Username */}
+                    <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
+                      <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>
+                        Username <span style={{ color: "rgba(255,255,255,0.25)" }}>(untuk carian kenalan)</span>
+                      </label>
+                      <RegInput
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+                        placeholder="hafiz_rahman"
+                        required
+                      />
+                      {username && !validateUsername(username) && (
+                        <p className="text-xs px-1" style={{ color: "#ff6b6b" }}>3–20 aksara, huruf/nombor/_ sahaja</p>
+                      )}
+                    </motion.div>
+
+                    {/* Email */}
                     <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
                       <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Email</label>
                       <RegInput
@@ -204,8 +258,9 @@ export default function RegisterPage() {
                       />
                     </motion.div>
 
+                    {/* Phone */}
                     <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
-                      <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>No. Telefon</label>
+                      <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>No. Telefon <span style={{ color: "rgba(255,255,255,0.25)" }}>(pilihan)</span></label>
                       <RegInput
                         type="tel"
                         value={phone}
@@ -214,6 +269,7 @@ export default function RegisterPage() {
                       />
                     </motion.div>
 
+                    {/* Password */}
                     <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
                       <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Kata Laluan</label>
                       <div className="relative">
@@ -226,27 +282,40 @@ export default function RegisterPage() {
                           minLength={6}
                           extraPaddingRight
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPw(!showPw)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-90"
-                          style={{ color: "#fff", transition: "opacity 150ms var(--ease-out)" }}
-                        >
+                        <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-90" style={{ color: "#fff" }}>
                           {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </motion.div>
 
+                    {/* Confirm Password */}
+                    <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
+                      <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Sahkan Kata Laluan</label>
+                      <div className="relative">
+                        <RegInput
+                          type={showConfirmPw ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Ulang kata laluan"
+                          required
+                          extraPaddingRight
+                        />
+                        <button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-90" style={{ color: "#fff" }}>
+                          {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="text-xs px-1" style={{ color: "#ff6b6b" }}>Kata laluan tidak sepadan</p>
+                      )}
+                    </motion.div>
+
                     <motion.button
                       variants={itemVariants}
                       type="button"
-                      onClick={() => { if (name && email && password.length >= 6) setStep(2); }}
-                      disabled={!name || !email || password.length < 6}
+                      onClick={() => { if (canProceedStep1()) setStep(2); }}
+                      disabled={!canProceedStep1()}
                       className="mt-1 w-full py-3.5 rounded-pill-btn text-sm font-semibold text-midnight flex items-center justify-center disabled:opacity-40 active:scale-[0.97]"
-                      style={{
-                        background: "var(--gradient-deep-ocean)",
-                        transition: "transform 160ms var(--ease-out), opacity 200ms",
-                      }}
+                      style={{ background: "var(--gradient-deep-ocean)", transition: "transform 160ms var(--ease-out), opacity 200ms" }}
                     >
                       Seterusnya →
                     </motion.button>
@@ -267,14 +336,7 @@ export default function RegisterPage() {
                     Pilih kaedah penerimaan bayaran kamu.
                   </p>
 
-                  {/* Payment method toggle */}
-                  <div
-                    className="flex rounded-pill-btn p-1"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.09)",
-                    }}
-                  >
+                  <div className="flex rounded-pill-btn p-1" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
                     {(["bank", "qr"] as const).map((m) => (
                       <button
                         key={m}
@@ -284,7 +346,7 @@ export default function RegisterPage() {
                         style={{
                           background: paymentMethod === m ? "var(--gradient-deep-ocean)" : "transparent",
                           color: paymentMethod === m ? "#000000" : "var(--color-whisper-gray)",
-                          transition: "background 200ms var(--ease-out), color 200ms var(--ease-out), transform 160ms var(--ease-out)",
+                          transition: "background 200ms var(--ease-out), color 200ms",
                         }}
                       >
                         {m === "bank" ? "Akaun Bank" : "DuitNow QR"}
@@ -294,25 +356,14 @@ export default function RegisterPage() {
 
                   <AnimatePresence mode="wait">
                     {paymentMethod === "bank" ? (
-                      <motion.div
-                        key="bank"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.2, ease: EASE_OUT }}
-                        className="flex flex-col gap-4"
-                      >
+                      <motion.div key="bank" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2, ease: EASE_OUT }} className="flex flex-col gap-4">
                         <div className="relative flex flex-col gap-1.5">
                           <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Nama Bank</label>
                           <button
                             type="button"
                             onClick={() => setShowBankPicker(!showBankPicker)}
                             className="w-full rounded-[10px] px-4 py-3 text-frost text-sm flex items-center justify-between active:scale-[0.97]"
-                            style={{
-                              background: "rgba(255,255,255,0.06)",
-                              border: "1px solid rgba(255,255,255,0.12)",
-                              transition: "transform 160ms var(--ease-out)",
-                            }}
+                            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", transition: "transform 160ms var(--ease-out)" }}
                           >
                             <span>{bankName}</span>
                             <ChevronDown size={15} style={{ color: "var(--color-whisper-gray)" }} />
@@ -323,11 +374,7 @@ export default function RegisterPage() {
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               transition={{ duration: 0.15, ease: EASE_OUT }}
                               className="absolute top-full left-0 right-0 z-20 rounded-[10px] mt-1 max-h-48 overflow-y-auto scrollbar-hide"
-                              style={{
-                                background: "#111",
-                                border: "1px solid rgba(255,255,255,0.12)",
-                                boxShadow: "0 24px 48px rgba(0,0,0,0.6)",
-                              }}
+                              style={{ background: "#111", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 24px 48px rgba(0,0,0,0.6)" }}
                             >
                               {BANKS.map((b) => (
                                 <button
@@ -335,10 +382,7 @@ export default function RegisterPage() {
                                   type="button"
                                   onClick={() => { setBankName(b); setShowBankPicker(false); }}
                                   className="w-full text-left px-4 py-2.5 text-sm"
-                                  style={{
-                                    color: bankName === b ? "#a0e0ab" : "#ffffff",
-                                    transition: "background 120ms",
-                                  }}
+                                  style={{ color: bankName === b ? "#a0e0ab" : "#ffffff", transition: "background 120ms" }}
                                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
                                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                                 >
@@ -351,54 +395,31 @@ export default function RegisterPage() {
 
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>No. Akaun</label>
-                          <RegInput
-                            value={bankAccount}
-                            onChange={(e) => setBankAccount(e.target.value)}
-                            placeholder="XXXX XXXX XXXX XXXX"
-                            required
-                          />
+                          <RegInput value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} placeholder="XXXX XXXX XXXX XXXX" required />
                         </div>
 
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Nama Pemegang Akaun</label>
-                          <RegInput
-                            value={bankHolder}
-                            onChange={(e) => setBankHolder(e.target.value)}
-                            placeholder="Hafiz Bin Rahman"
-                            required
-                          />
+                          <RegInput value={bankHolder} onChange={(e) => setBankHolder(e.target.value)} placeholder="Hafiz Bin Rahman" required />
                         </div>
                       </motion.div>
                     ) : (
-                      <motion.div
-                        key="qr"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.2, ease: EASE_OUT }}
-                      >
-                        <label className="text-xs block mb-1.5" style={{ color: "var(--color-whisper-gray)" }}>
-                          Upload QR DuitNow
-                        </label>
+                      <motion.div key="qr" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2, ease: EASE_OUT }}>
+                        <label className="text-xs block mb-1.5" style={{ color: "var(--color-whisper-gray)" }}>Upload QR DuitNow</label>
                         <label
                           className="flex flex-col items-center justify-center gap-3 rounded-[10px] py-8 cursor-pointer"
-                          style={{
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px dashed rgba(255,255,255,0.15)",
-                            transition: "border-color 150ms var(--ease-out)",
-                          }}
+                          style={{ background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(255,255,255,0.15)", transition: "border-color 150ms var(--ease-out)" }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.3)"; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)"; }}
                         >
                           <input type="file" accept="image/*" onChange={handleQrChange} className="hidden" />
                           {qrPreview ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={qrPreview} alt="QR Preview" className="w-40 h-40 object-contain rounded-[10px]" />
                           ) : (
                             <>
                               <Upload size={26} style={{ color: "var(--color-whisper-gray)" }} />
-                              <span className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>
-                                Tap untuk upload QR
-                              </span>
+                              <span className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>Tap untuk upload QR</span>
                             </>
                           )}
                         </label>
@@ -412,11 +433,7 @@ export default function RegisterPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.2, ease: EASE_OUT }}
                       className="text-sm px-3 py-2 rounded-[10px]"
-                      style={{
-                        color: "#FF6B6B",
-                        background: "rgba(255,107,107,0.1)",
-                        border: "1px solid rgba(255,107,107,0.2)",
-                      }}
+                      style={{ color: "#FF6B6B", background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.2)" }}
                     >
                       {error}
                     </motion.p>
@@ -427,12 +444,7 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => setStep(1)}
                       className="px-5 py-3.5 rounded-pill-btn text-sm font-medium active:scale-[0.97]"
-                      style={{
-                        color: "#ffffff",
-                        border: "1px solid rgba(255,255,255,0.15)",
-                        background: "transparent",
-                        transition: "transform 160ms var(--ease-out), border-color 150ms",
-                      }}
+                      style={{ color: "#ffffff", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", transition: "transform 160ms var(--ease-out)" }}
                       onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
                     >
@@ -440,16 +452,9 @@ export default function RegisterPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={
-                        loading ||
-                        (paymentMethod === "bank" && (!bankAccount || !bankHolder)) ||
-                        (paymentMethod === "qr" && !qrFile)
-                      }
+                      disabled={loading || (paymentMethod === "bank" && (!bankAccount || !bankHolder)) || (paymentMethod === "qr" && !qrFile)}
                       className="flex-1 py-3.5 rounded-pill-btn text-sm font-semibold text-midnight flex items-center justify-center gap-2 disabled:opacity-40 active:scale-[0.97]"
-                      style={{
-                        background: "var(--gradient-deep-ocean)",
-                        transition: "transform 160ms var(--ease-out), opacity 200ms",
-                      }}
+                      style={{ background: "var(--gradient-deep-ocean)", transition: "transform 160ms var(--ease-out), opacity 200ms" }}
                     >
                       {loading && <Loader2 size={16} className="animate-spin" />}
                       Daftar Sekarang
@@ -463,11 +468,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm mt-5" style={{ color: "var(--color-whisper-gray)" }}>
           Dah ada akaun?{" "}
-          <Link
-            href="/auth/login"
-            className="text-frost underline-offset-2 hover:underline"
-            style={{ transition: "opacity 150ms" }}
-          >
+          <Link href="/auth/login" className="text-frost underline-offset-2 hover:underline" style={{ transition: "opacity 150ms" }}>
             Log masuk
           </Link>
         </p>
@@ -477,13 +478,7 @@ export default function RegisterPage() {
 }
 
 function RegInput({
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  required,
-  minLength,
-  extraPaddingRight,
+  type = "text", value, onChange, placeholder, required, minLength, extraPaddingRight,
 }: {
   type?: string;
   value: string;
@@ -502,15 +497,17 @@ function RegInput({
       required={required}
       minLength={minLength}
       className={`w-full rounded-[10px] px-4 py-3 text-sm ${extraPaddingRight ? "pr-12" : ""}`}
-      style={{
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        outline: "none",
-        color: "#ffffff",
-        transition: "border-color 150ms var(--ease-out)",
-      }}
+      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", outline: "none", color: "#ffffff", transition: "border-color 150ms var(--ease-out)" }}
       onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
       onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
     />
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

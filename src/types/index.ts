@@ -15,6 +15,7 @@ export type ActivityType =
 export interface Profile {
   id: string;
   name: string;
+  username?: string;
   email: string;
   phone?: string;
   payment_method: PaymentMethod;
@@ -24,6 +25,14 @@ export interface Profile {
   qr_url?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Friendship {
+  id: string;
+  organizer_id: string;
+  friend_user_id: string;
+  created_at: string;
+  profiles?: Profile;
 }
 
 export interface Bill {
@@ -60,6 +69,7 @@ export interface BillMember {
   payment_screenshot_url?: string;
   confirmed_by?: "member" | "organizer";
   personal_token: string;
+  user_id?: string;
   created_at: string;
   updated_at: string;
   item_claims?: ItemClaim[];

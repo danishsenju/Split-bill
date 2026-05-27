@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Users, Search, X } from "lucide-react";
 import { ScanResult } from "@/types";
 import { generatePayCode } from "@/lib/paycode";
 import { formatRM } from "@/lib/utils";
@@ -16,6 +16,176 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import dayjs, { Dayjs } from "dayjs";
+
+const GRADIENT = "linear-gradient(90deg, rgb(160, 224, 171), rgb(255, 172, 46) 50%, rgb(165, 45, 37))";
+const PILL = "75.024px";
+
+interface FriendProfile {
+  id: string;
+  name: string;
+  username?: string;
+}
+
+interface Friendship {
+  id: string;
+  friend_user_id: string;
+  profiles: FriendProfile | null;
+}
+
+function FriendPickerSheet({
+  onClose,
+  onSelect,
+}: {
+  onClose: () => void;
+  onSelect: (name: string) => void;
+}) {
+  const [friends, setFriends] = useState<Friendship[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    fetch("/api/friends?q=")
+      .then((r) => r.json())
+      .then((d: { friends?: Friendship[] }) => { setFriends(d.friends ?? []); setLoading(false); })
+      .catch(() => { setFriends([]); setLoading(false); });
+  }, []);
+
+  const filtered = (friends ?? []).filter((f) => {
+    if (!query.trim()) return true;
+    const p = f.profiles;
+    if (!p) return false;
+    return p.name.toLowerCase().includes(query.toLowerCase()) ||
+      (p.username?.toLowerCase().includes(query.toLowerCase()) ?? false);
+  });
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+          backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
+          zIndex: 50, display: "flex", alignItems: "flex-end",
+        }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: "100%", maxWidth: "480px", margin: "0 auto",
+            background: "#111111", borderRadius: "24px 24px 0 0",
+            border: "1px solid rgba(255,255,255,0.08)", borderBottom: "none",
+            padding: "24px 20px", paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+            maxHeight: "70dvh", display: "flex", flexDirection: "column", gap: "16px",
+          }}
+        >
+          {/* Sheet header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <p className="font-clash font-bold text-frost" style={{ fontSize: "16px" }}>
+              Tambah dari Kenalan
+            </p>
+            <button
+              onClick={onClose}
+              className="active:scale-[0.88]"
+              style={{ color: "#6d6d6d", transition: "transform 160ms" }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Search inside sheet */}
+          <div style={{ position: "relative" }}>
+            <Search
+              size={14}
+              style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#6d6d6d", pointerEvents: "none" }}
+            />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tapis nama..."
+              className="font-dm w-full"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "10px",
+                padding: "10px 14px 10px 34px",
+                color: "#ffffff",
+                fontSize: "13px",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          {/* List */}
+          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0" }}>
+            {loading && (
+              <p className="font-dm text-whisper text-sm text-center py-6">Memuatkan kenalan...</p>
+            )}
+            {!loading && filtered.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <Users size={24} style={{ color: "#3a3a3a" }} />
+                <p className="font-dm text-whisper text-sm">
+                  {(friends?.length ?? 0) === 0
+                    ? "Belum ada kenalan. Tambah dari halaman Profil → Kenalan."
+                    : "Tiada kenalan sepadan."}
+                </p>
+              </div>
+            )}
+            {!loading && filtered.map((f, i) => {
+              const p = f.profiles;
+              if (!p) return null;
+              return (
+                <button
+                  key={f.friend_user_id}
+                  onClick={() => { onSelect(p.name); onClose(); }}
+                  className="flex items-center gap-3 active:bg-white/5 text-left w-full"
+                  style={{
+                    padding: "12px 4px",
+                    borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                    background: "transparent",
+                    transition: "background 120ms",
+                  }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-clash font-bold shrink-0"
+                    style={{ background: "rgba(255,255,255,0.06)", color: "#ffffff", fontSize: "13px" }}
+                  >
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-dm font-medium text-frost text-sm">{p.name}</p>
+                    {p.username && (
+                      <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>@{p.username}</p>
+                    )}
+                  </div>
+                  <span
+                    className="font-dm shrink-0"
+                    style={{
+                      fontSize: "11px",
+                      padding: "4px 10px",
+                      borderRadius: "99px",
+                      background: "rgba(255,255,255,0.06)",
+                      color: "#6d6d6d",
+                    }}
+                  >
+                    Pilih
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 interface Member {
   name: string;
@@ -92,6 +262,7 @@ export default function CreateBillClient() {
   const [members, setMembers] = useState<Member[]>([{ name: "", phone: "" }]);
   const [creating, setCreating] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [showFriendPicker, setShowFriendPicker] = useState(false);
 
   // Step 3
   const [createdPayCode, setCreatedPayCode] = useState("");
@@ -510,6 +681,22 @@ export default function CreateBillClient() {
               ))}
             </div>
 
+            {/* Add from friends */}
+            <button
+              onClick={() => setShowFriendPicker(true)}
+              className="flex items-center justify-center gap-2 font-dm font-semibold text-sm active:scale-[0.97]"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: PILL,
+                padding: "12px 0",
+                color: "#ffffff",
+                transition: "background 150ms, transform 120ms cubic-bezier(0.23,1,0.32,1)",
+              }}
+            >
+              <Users size={15} style={{ color: "#6d6d6d" }} /> Tambah dari Kenalan
+            </button>
+
             {/* Add member — ghost dashed */}
             <button
               onClick={addMember}
@@ -525,6 +712,22 @@ export default function CreateBillClient() {
             >
               <Plus size={15} /> {t.addMember}
             </button>
+
+            {/* Friend picker bottom sheet */}
+            {showFriendPicker && (
+              <FriendPickerSheet
+                onClose={() => setShowFriendPicker(false)}
+                onSelect={(name) => {
+                  // Fill the first empty slot or append a new member
+                  const emptyIdx = members.findIndex((m) => !m.name.trim());
+                  if (emptyIdx >= 0) {
+                    updateMember(emptyIdx, "name", name);
+                  } else {
+                    setMembers((prev) => [...prev, { name, phone: "" }]);
+                  }
+                }}
+              />
+            )}
 
             {errors.length > 0 && <ErrorBox errors={errors} />}
 

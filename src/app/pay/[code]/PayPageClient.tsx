@@ -11,7 +11,6 @@ import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import SwipeConfirm from "@/components/ui/SwipeConfirm";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Confetti from "@/components/ui/Confetti";
-import GuestNameInput from "@/components/member/GuestNameInput";
 
 interface OrganizerProfile {
   name: string;
@@ -108,7 +107,6 @@ export default function PayPageClient({
   organizerProfile,
 }: Props) {
   const [member] = useState<BillMember | null>(initialMember);
-  const [guestName, setGuestName] = useState("");
   const [equalStep, setEqualStep] = useState<EqualStep>("entry");
   const [scanStep, setScanStep] = useState<ScanStep>("tuntut");
   const [paymentTab, setPaymentTab] = useState<PaymentTab>("bank");
@@ -123,7 +121,7 @@ export default function PayPageClient({
   const isOverdue = daysLeft < 0;
   const categoryEmoji = bill.category?.split(" ")[0] ?? "🧾";
   const categoryName = bill.category?.replace(/^\S+\s*/, "") ?? "";
-  const resolvedName = member?.name ?? guestName;
+  const resolvedName = member?.name ?? "";
   const amountOwed = member?.amount_owed ?? 0;
 
   async function handleConfirm() {
@@ -169,52 +167,28 @@ export default function PayPageClient({
     }
   }
 
-  // ── GUEST ENTRY ──
-  if (!member && !guestName) {
+  // ── NO TOKEN → invalid link error ──
+  if (!member) {
     return (
       <div style={{ minHeight: "100dvh", background: "transparent", maxWidth: "480px", margin: "0 auto", position: "relative", overflow: "hidden" }}>
         <Orbs />
-        <div style={{ position: "relative", zIndex: 1, padding: "56px 24px 40px" }}>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-            {/* Gradient strip */}
-            <div style={{ height: "3px", borderRadius: "2px", background: GRADIENT, marginBottom: "32px", boxShadow: "0 0 24px rgba(255,172,46,0.5)" }} />
-
-            {/* Bill meta */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-              <span style={{ fontSize: "20px" }}>{categoryEmoji}</span>
-              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px", letterSpacing: "0.04em" }}>{categoryName}</span>
-              <span style={{
-                marginLeft: "auto",
-                fontSize: "11px",
-                padding: "5px 12px",
-                borderRadius: PILL,
-                border: `1px solid ${isOverdue ? "rgba(255,71,87,0.3)" : "rgba(255,211,42,0.3)"}`,
-                color: isOverdue ? "#ff6b6b" : "#ffd32a",
-                background: isOverdue ? "rgba(255,71,87,0.08)" : "rgba(255,211,42,0.08)",
-              }}>
-                {formatDaysRemaining(bill.due_date)}
-              </span>
-            </div>
-
-            <h1 style={{
-              fontFamily: "var(--font-syne), system-ui",
-              fontWeight: 700,
-              fontSize: "32px",
-              color: "#fff",
-              lineHeight: 1.1,
-              marginBottom: "6px",
-            }}>
-              {bill.title}
-            </h1>
-            {organizerProfile?.name && (
-              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "13px", marginBottom: "40px" }}>
-                dari {organizerProfile.name}
-              </p>
-            )}
-
-            <GuestNameInput onComplete={(name) => setGuestName(name)} />
-          </motion.div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ position: "relative", zIndex: 1, padding: "56px 24px 40px", display: "flex", flexDirection: "column", gap: "20px", alignItems: "center", textAlign: "center" }}
+        >
+          <div style={{ height: "3px", width: "100%", borderRadius: "2px", background: GRADIENT, boxShadow: "0 0 24px rgba(255,172,46,0.5)" }} />
+          <span style={{ fontSize: "48px", marginTop: "24px" }}>🔗</span>
+          <h1 style={{ fontFamily: "var(--font-plus-jakarta), system-ui", fontWeight: 800, fontSize: "24px", color: "#fff", lineHeight: 1.2 }}>
+            Link Tidak Sah
+          </h1>
+          <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "14px", lineHeight: 1.6 }}>
+            Link ini bukan untuk anda atau telah tamat. Hubungi penganjur untuk link peribadi anda.
+          </p>
+          <Link href="/auth/login" style={{ ...primaryBtn, textDecoration: "none", marginTop: "8px" }}>
+            Log Masuk
+          </Link>
+        </motion.div>
       </div>
     );
   }
@@ -452,7 +426,7 @@ export default function PayPageClient({
           )}
 
           {equalStep === "success" && (
-            <SuccessScreen name={resolvedName} billTitle={bill.title} amountOwed={amountOwed} dismissPromo={dismissPromo} onDismissPromo={() => setDismissPromo(true)} />
+            <SuccessScreen name={resolvedName} billTitle={bill.title} amountOwed={amountOwed} memberToken={initialMember?.personal_token ?? ""} dismissPromo={dismissPromo} onDismissPromo={() => setDismissPromo(true)} />
           )}
         </AnimatePresence>
       </div>
@@ -618,15 +592,15 @@ export default function PayPageClient({
         )}
 
         {scanStep === "success" && (
-          <SuccessScreen name={resolvedName} billTitle={bill.title} amountOwed={amountOwed} dismissPromo={dismissPromo} onDismissPromo={() => setDismissPromo(true)} />
+          <SuccessScreen name={resolvedName} billTitle={bill.title} amountOwed={amountOwed} memberToken={initialMember?.personal_token ?? ""} dismissPromo={dismissPromo} onDismissPromo={() => setDismissPromo(true)} />
         )}
       </AnimatePresence>
     </div>
   );
 }
 
-function SuccessScreen({ name, billTitle, amountOwed, dismissPromo, onDismissPromo }: {
-  name: string; billTitle: string; amountOwed: number; dismissPromo: boolean; onDismissPromo: () => void;
+function SuccessScreen({ name, billTitle, amountOwed, memberToken, dismissPromo, onDismissPromo }: {
+  name: string; billTitle: string; amountOwed: number; memberToken: string; dismissPromo: boolean; onDismissPromo: () => void;
 }) {
   const now = new Date();
   const dateStr = now.toLocaleDateString("ms-MY", { day: "numeric", month: "long", year: "numeric" });
@@ -700,7 +674,10 @@ function SuccessScreen({ name, billTitle, amountOwed, dismissPromo, onDismissPro
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", lineHeight: 1.6, marginBottom: "18px" }}>
             Buat bil sendiri, track siapa dah bayar, hantar reminder WhatsApp — semua dalam satu app.
           </p>
-          <Link href="/auth/register" style={{ ...primaryBtn, textDecoration: "none" }}>
+          <Link
+            href={`/auth/register?name=${encodeURIComponent(name)}&token=${encodeURIComponent(memberToken)}`}
+            style={{ ...primaryBtn, textDecoration: "none" }}
+          >
             Daftar Percuma →
           </Link>
         </motion.div>

@@ -13,6 +13,7 @@ import {
   ChevronRight,
   CreditCard,
   QrCode,
+  Users,
 } from "lucide-react";
 import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
@@ -411,6 +412,16 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                 </button>
               }
             />
+
+            {/* Kenalan */}
+            <Link href="/profile/friends" style={{ display: "contents" }}>
+              <SettingRow
+                icon={<Users size={16} />}
+                label="Kenalan"
+                sublabel="Urus senarai kenalan anda"
+                right={<ChevronRight size={15} style={{ color: "#6d6d6d" }} />}
+              />
+            </Link>
 
             {/* Privacy */}
             <SettingRow
