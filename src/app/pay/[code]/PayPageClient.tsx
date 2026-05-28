@@ -3,8 +3,8 @@
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Copy, Check, Upload, X, ArrowLeft, ChevronRight, Download } from "lucide-react";
-import { Bill, BillMember } from "@/types";
+import { Copy, Check, Upload, X, ArrowLeft, ChevronRight, Download, Flag, Plus, Minus } from "lucide-react";
+import { Bill, BillItem, BillMember } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { formatRM, formatDaysRemaining, getDaysRemaining, maskAccount } from "@/lib/utils";
 import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
@@ -119,12 +119,123 @@ export default function PayPageClient({
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Scan-flow state: claims + flags + semak tab
+  const [claims, setClaims] = useState<Record<string, number>>({});
+  const [submittingClaims, setSubmittingClaims] = useState(false);
+  const [semakTab, setSemakTab] = useState<"ringkasan" | "resit">("ringkasan");
+  const [flagSheetItem, setFlagSheetItem] = useState<BillItem | null>(null);
+  const [flagNote, setFlagNote] = useState("");
+  const [submittingFlag, setSubmittingFlag] = useState(false);
+  const [flaggedItemIds, setFlaggedItemIds] = useState<Set<string>>(new Set());
+
   const daysLeft = getDaysRemaining(bill.due_date);
   const isOverdue = daysLeft < 0;
   const categoryEmoji = bill.category?.split(" ")[0] ?? "🧾";
   const categoryName = bill.category?.replace(/^\S+\s*/, "") ?? "";
   const resolvedName = member?.name ?? "";
-  const amountOwed = member?.amount_owed ?? 0;
+
+  // Filter to claimable items (exclude tax/service_charge/discount line items)
+  const claimableItems = (bill.bill_items ?? []).filter((i) => (i.item_type ?? "item") === "item");
+  const lineTotalOf = (i: BillItem) => i.edited_price * (i.qty || 1);
+  const unitsAvailable = (i: BillItem) => Math.max(1, i.total_units_available || i.qty || 1);
+  const shareOf = (i: BillItem, units: number) => (lineTotalOf(i) / unitsAvailable(i)) * units;
+
+  const claimedItemTotal = claimableItems.reduce(
+    (sum, i) => sum + shareOf(i, claims[i.id] ?? 0),
+    0
+  );
+  const itemsSubtotal = claimableItems.reduce((s, i) => s + lineTotalOf(i), 0);
+  const claimProportion = itemsSubtotal > 0 ? claimedItemTotal / itemsSubtotal : 0;
+  const taxShare = (bill.tax ?? 0) * claimProportion;
+  const serviceShare = (bill.service_charge ?? 0) * claimProportion;
+  const scanAmountOwed = claimedItemTotal + taxShare + serviceShare;
+
+  const amountOwed = bill.split_mode === "scan" ? scanAmountOwed : member?.amount_owed ?? 0;
+  const hasAnyClaim = Object.values(claims).some((v) => v > 0);
+  const claimedItems = claimableItems.filter((i) => (claims[i.id] ?? 0) > 0);
+
+  function toggleClaim(item: BillItem) {
+    const available = unitsAvailable(item);
+    setClaims((prev) => {
+      const current = prev[item.id] ?? 0;
+      if (available === 1) {
+        const next = { ...prev };
+        if (current > 0) delete next[item.id];
+        else next[item.id] = 1;
+        return next;
+      }
+      // Multi-unit: tap acts as +1 cycling back to 0
+      const nextVal = current >= available ? 0 : current + 1;
+      const next = { ...prev };
+      if (nextVal === 0) delete next[item.id];
+      else next[item.id] = nextVal;
+      return next;
+    });
+  }
+
+  function adjustClaim(item: BillItem, delta: number) {
+    const available = unitsAvailable(item);
+    setClaims((prev) => {
+      const current = prev[item.id] ?? 0;
+      const nextVal = Math.max(0, Math.min(available, current + delta));
+      const next = { ...prev };
+      if (nextVal === 0) delete next[item.id];
+      else next[item.id] = nextVal;
+      return next;
+    });
+  }
+
+  async function submitClaims() {
+    if (!member || submittingClaims) {
+      setScanStep("semak");
+      return;
+    }
+    setSubmittingClaims(true);
+    try {
+      const supabase = createClient();
+      await supabase.from("item_claims").delete().eq("member_id", member.id);
+      const rows = claimableItems
+        .filter((i) => (claims[i.id] ?? 0) > 0)
+        .map((i) => ({
+          item_id: i.id,
+          member_id: member.id,
+          units_claimed: claims[i.id],
+          amount_share: shareOf(i, claims[i.id]),
+        }));
+      if (rows.length > 0) await supabase.from("item_claims").insert(rows);
+      await supabase
+        .from("bill_members")
+        .update({ amount_owed: scanAmountOwed })
+        .eq("id", member.id);
+      setScanStep("semak");
+    } finally {
+      setSubmittingClaims(false);
+    }
+  }
+
+  async function submitFlag() {
+    if (!member || !flagSheetItem || submittingFlag) return;
+    setSubmittingFlag(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("flags").insert({
+        bill_id: bill.id,
+        member_id: member.id,
+        item_id: flagSheetItem.id,
+        member_note: flagNote || null,
+        original_price: flagSheetItem.original_price,
+        charged_price: flagSheetItem.edited_price,
+        status: "pending",
+      });
+      if (!error) {
+        setFlaggedItemIds((prev) => new Set(prev).add(flagSheetItem.id));
+      }
+      setFlagSheetItem(null);
+      setFlagNote("");
+    } finally {
+      setSubmittingFlag(false);
+    }
+  }
 
   async function handleConfirm() {
     setConfirming(true);
@@ -597,29 +708,87 @@ export default function PayPageClient({
               Tuntut Item Anda
             </h1>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", lineHeight: 1.5 }}>
-              Pilih item yang anda pesan daripada resit ini.
+              Tap item yang anda pesan. Untuk item kongsi (qty &gt; 1), guna +/− untuk pilih jumlah unit.
             </p>
             <div style={{ ...glass, padding: "4px 0" }}>
-              {(bill.bill_items ?? []).map((item, idx) => (
-                <div key={item.id} style={{
-                  display: "flex", alignItems: "center", gap: "12px", padding: "14px 20px",
-                  borderBottom: idx < (bill.bill_items?.length ?? 0) - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: "#fff", fontSize: "14px", marginBottom: "2px" }}>{item.name}</p>
-                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>{item.qty}× {formatRM(item.edited_price)}</p>
+              {claimableItems.map((item, idx) => {
+                const available = unitsAvailable(item);
+                const claimed = claims[item.id] ?? 0;
+                const isClaimed = claimed > 0;
+                const isShared = available > 1;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => !isShared && toggleClaim(item)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "12px", padding: "14px 20px",
+                      borderBottom: idx < claimableItems.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                      cursor: isShared ? "default" : "pointer",
+                      background: isClaimed ? "rgba(160,224,171,0.06)" : "transparent",
+                      transition: "background 180ms ease",
+                    }}
+                  >
+                    <div style={{
+                      width: "20px", height: "20px", borderRadius: "6px", flexShrink: 0,
+                      border: `1.5px solid ${isClaimed ? "rgba(160,224,171,0.9)" : "rgba(255,255,255,0.2)"}`,
+                      background: isClaimed ? "rgba(160,224,171,0.9)" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {isClaimed && <Check size={13} strokeWidth={3} style={{ color: "#000" }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ color: "#fff", fontSize: "14px", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</p>
+                      <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>
+                        {isShared ? `${claimed}/${available} unit · ` : ""}
+                        {formatRM(lineTotalOf(item))}
+                      </p>
+                    </div>
+                    {isShared ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => adjustClaim(item, -1)}
+                          disabled={claimed === 0}
+                          style={{ width: "26px", height: "26px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.14)", background: "transparent", color: "#fff", cursor: claimed === 0 ? "not-allowed" : "pointer", opacity: claimed === 0 ? 0.3 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span style={{ fontSize: "13px", color: "#fff", fontWeight: 600, minWidth: "14px", textAlign: "center" }}>{claimed}</span>
+                        <button
+                          onClick={() => adjustClaim(item, +1)}
+                          disabled={claimed >= available}
+                          style={{ width: "26px", height: "26px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.14)", background: "transparent", color: "#fff", cursor: claimed >= available ? "not-allowed" : "pointer", opacity: claimed >= available ? 0.3 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: "14px", fontWeight: 600, background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                        {formatRM(lineTotalOf(item))}
+                      </span>
+                    )}
                   </div>
-                  <span style={{ fontSize: "14px", fontWeight: 600, background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                    {formatRM(item.edited_price * item.qty)}
-                  </span>
-                </div>
-              ))}
-              {(bill.bill_items ?? []).length === 0 && (
+                );
+              })}
+              {claimableItems.length === 0 && (
                 <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center", padding: "28px" }}>Tiada item dalam resit</p>
               )}
             </div>
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScanStep("semak")} style={primaryBtn}>
-              Seterusnya <ChevronRight size={16} />
+
+            {/* Running total */}
+            <div style={{ ...glass, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px" }}>Jumlah anda</span>
+              <span style={{ fontSize: "18px", fontWeight: 700, background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                {formatRM(scanAmountOwed)}
+              </span>
+            </div>
+
+            <motion.button
+              whileTap={{ scale: hasAnyClaim ? 0.97 : 1 }}
+              onClick={submitClaims}
+              disabled={!hasAnyClaim || submittingClaims}
+              style={{ ...primaryBtn, opacity: !hasAnyClaim || submittingClaims ? 0.5 : 1, cursor: !hasAnyClaim ? "not-allowed" : "pointer" }}
+            >
+              {submittingClaims ? "Menyimpan..." : "Seterusnya"} <ChevronRight size={16} />
             </motion.button>
           </motion.div>
         )}
@@ -638,19 +807,146 @@ export default function PayPageClient({
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", lineHeight: 1.5 }}>
               Bandingkan caj dengan resit asal. Flag jika terdapat perbezaan.
             </p>
-            <div style={{ ...glass, padding: "20px" }}>
+
+            <div style={{ ...glass, padding: "16px" }}>
+              {/* Tab toggle */}
               <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-                {["Ringkasan", "Resit Asal"].map((tab) => (
-                  <button key={tab} style={{ padding: "8px 18px", borderRadius: PILL, fontSize: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)", cursor: "pointer" }}>
-                    {tab}
+                {([
+                  { key: "ringkasan", label: "Ringkasan" },
+                  { key: "resit", label: "Resit Asal" },
+                ] as const).map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setSemakTab(t.key)}
+                    style={{
+                      padding: "8px 18px", borderRadius: PILL, fontSize: "12px", cursor: "pointer",
+                      ...(semakTab === t.key
+                        ? { background: GRADIENT, color: "#000", border: "none", fontWeight: 600 }
+                        : { background: "transparent", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.12)" }
+                      ),
+                    }}
+                  >
+                    {t.label}
                   </button>
                 ))}
               </div>
-              <p style={{ color: "#a0e0ab", fontSize: "13px", textAlign: "center", padding: "12px 0" }}>✓ Semua item sepadan</p>
+
+              {semakTab === "ringkasan" ? (
+                claimedItems.length === 0 ? (
+                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", textAlign: "center", padding: "20px 0" }}>
+                    Tiada item dituntut. Kembali untuk pilih item.
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {claimedItems.map((item) => {
+                      const charged = item.edited_price;
+                      const original = item.original_price ?? charged;
+                      const diff = Math.abs(charged - original) > 0.01;
+                      const flagged = flaggedItemIds.has(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "10px",
+                            padding: "12px 14px", borderRadius: "12px",
+                            background: flagged
+                              ? "rgba(255,107,107,0.08)"
+                              : diff
+                                ? "rgba(255,211,42,0.06)"
+                                : "rgba(160,224,171,0.05)",
+                            border: `1px solid ${flagged ? "rgba(255,107,107,0.25)" : diff ? "rgba(255,211,42,0.18)" : "rgba(160,224,171,0.14)"}`,
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ color: "#fff", fontSize: "13px", marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</p>
+                            <div style={{ display: "flex", gap: "10px", fontSize: "11px" }}>
+                              <span style={{ color: "rgba(255,255,255,0.4)" }}>Resit: {formatRM(original)}</span>
+                              <span style={{ color: diff ? "#ffd32a" : "rgba(255,255,255,0.4)" }}>Caj: {formatRM(charged)}</span>
+                            </div>
+                          </div>
+                          {flagged ? (
+                            <span style={{ fontSize: "10px", padding: "5px 10px", borderRadius: PILL, background: "rgba(255,107,107,0.15)", color: "#ff6b6b", display: "flex", alignItems: "center", gap: "4px" }}>
+                              <Flag size={10} /> Flagged
+                            </span>
+                          ) : diff ? (
+                            <button
+                              onClick={() => setFlagSheetItem(item)}
+                              style={{ padding: "6px 12px", borderRadius: PILL, fontSize: "11px", background: "rgba(255,211,42,0.15)", color: "#ffd32a", border: "1px solid rgba(255,211,42,0.3)", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
+                            >
+                              <Flag size={10} /> Flag
+                            </button>
+                          ) : (
+                            <Check size={14} style={{ color: "#a0e0ab", flexShrink: 0 }} />
+                          )}
+                        </div>
+                      );
+                    })}
+                    {claimedItems.every((i) => Math.abs((i.original_price ?? i.edited_price) - i.edited_price) <= 0.01) && (
+                      <p style={{ color: "#a0e0ab", fontSize: "12px", textAlign: "center", padding: "8px 0 0" }}>✓ Semua item sepadan</p>
+                    )}
+                  </div>
+                )
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                  {bill.receipt_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={bill.receipt_url} alt="Resit asal" style={{ width: "100%", maxHeight: "420px", objectFit: "contain", borderRadius: "10px", background: "rgba(255,255,255,0.03)" }} />
+                  ) : (
+                    <div style={{ width: "100%", padding: "30px", textAlign: "center", color: "rgba(255,255,255,0.35)", fontSize: "12px", border: "1px dashed rgba(255,255,255,0.12)", borderRadius: "10px" }}>
+                      Tiada imej resit dimuat naik
+                    </div>
+                  )}
+                  {bill.store_name && (
+                    <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "12px" }}>{bill.store_name}</p>
+                  )}
+                </div>
+              )}
             </div>
+
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScanStep("bayar")} style={primaryBtn}>
               Teruskan ke Bayaran <ChevronRight size={16} />
             </motion.button>
+
+            {/* Flag bottom sheet */}
+            <BottomSheet open={!!flagSheetItem} onClose={() => { setFlagSheetItem(null); setFlagNote(""); }} title="Flag Item">
+              {flagSheetItem && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div style={{ ...glass, padding: "14px 16px" }}>
+                    <p style={{ color: "#fff", fontSize: "14px", fontWeight: 600, marginBottom: "6px" }}>{flagSheetItem.name}</p>
+                    <div style={{ display: "flex", gap: "16px", fontSize: "12px" }}>
+                      <span style={{ color: "rgba(255,255,255,0.45)" }}>Resit asal: {formatRM(flagSheetItem.original_price ?? flagSheetItem.edited_price)}</span>
+                      <span style={{ color: "#ffd32a" }}>Caj: {formatRM(flagSheetItem.edited_price)}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "12px", marginBottom: "8px" }}>Nota (pilihan)</p>
+                    <textarea
+                      value={flagNote}
+                      onChange={(e) => setFlagNote(e.target.value)}
+                      placeholder="Cth: Harga resit RM 12 tapi caj RM 15..."
+                      rows={3}
+                      style={{
+                        width: "100%", padding: "12px 14px", borderRadius: "12px",
+                        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                        color: "#fff", fontSize: "13px", resize: "none", fontFamily: "inherit",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={submitFlag}
+                    disabled={submittingFlag}
+                    style={{ ...primaryBtn, opacity: submittingFlag ? 0.6 : 1 }}
+                  >
+                    <Flag size={14} /> {submittingFlag ? "Menghantar..." : "Hantar Flag"}
+                  </motion.button>
+                  <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "11px", textAlign: "center", lineHeight: 1.5 }}>
+                    Flag tak menghalang bayaran. Organizer akan dimaklumkan untuk semak.
+                  </p>
+                </div>
+              )}
+            </BottomSheet>
           </motion.div>
         )}
 
@@ -684,6 +980,77 @@ export default function PayPageClient({
             <div style={{ ...glass, padding: "20px 20px 16px" }}>
               <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "10px" }}>Pay Code</p>
               <PayCodeDisplay code={bill.pay_code} />
+            </div>
+
+            {/* Payment method — bank / QR */}
+            <div style={{ ...glass, padding: "20px" }}>
+              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Kaedah Bayaran</p>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                {(["bank", "qr"] as PaymentTab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setPaymentTab(tab)}
+                    style={{
+                      flex: 1, padding: "10px", borderRadius: PILL,
+                      fontSize: "12px", fontWeight: 500, cursor: "pointer", transition: "all 200ms ease",
+                      ...(paymentTab === tab
+                        ? { background: GRADIENT, color: "#000", border: "none" }
+                        : { background: "transparent", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.14)" }
+                      ),
+                    }}
+                  >
+                    {tab === "bank" ? "Bank Transfer" : "DuitNow QR"}
+                  </button>
+                ))}
+              </div>
+
+              {paymentTab === "bank" ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div>
+                      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Bank</p>
+                      <p style={{ color: "#fff", fontWeight: 600, fontSize: "15px" }}>{organizerProfile?.bank_name ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>No. Akaun</p>
+                      <p style={{ fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: "20px", letterSpacing: "0.1em", background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                        {organizerProfile?.bank_account ? maskAccount(organizerProfile.bank_account) : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Nama Pemegang</p>
+                      <p style={{ color: "#fff", fontSize: "14px" }}>{organizerProfile?.bank_holder_name ?? "—"}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={copyAccount} style={{ ...ghostPill, padding: "12px 16px", flex: 1 }}>
+                      {copiedAccount ? <Check size={14} style={{ color: "#a0e0ab" }} /> : <Copy size={14} />}
+                      {copiedAccount ? "Disalin!" : "Salin"}
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveBankCard} disabled={saving} style={{ ...ghostPill, padding: "12px 16px", flex: 1, opacity: saving ? 0.6 : 1 }}>
+                      <Download size={14} />
+                      {saving ? "..." : "Simpan"}
+                    </motion.button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px" }}>
+                  {organizerProfile?.qr_url ? (
+                    <div style={{ background: "#fff", borderRadius: "14px", padding: "12px", width: "196px", height: "196px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={organizerProfile.qr_url} alt="DuitNow QR" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    </div>
+                  ) : (
+                    <div style={{ ...glass, width: "196px", height: "196px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", textAlign: "center" }}>QR tidak tersedia</p>
+                    </div>
+                  )}
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={handleSaveQR} disabled={saving || !organizerProfile?.qr_url} style={{ ...ghostPill, padding: "12px 20px", opacity: saving || !organizerProfile?.qr_url ? 0.6 : 1 }}>
+                    <Download size={14} />
+                    {saving ? "Menyimpan..." : "Simpan QR"}
+                  </motion.button>
+                </div>
+              )}
             </div>
 
             <div style={{ ...glass, padding: "20px" }}>
