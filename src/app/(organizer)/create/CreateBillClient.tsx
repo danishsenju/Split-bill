@@ -12,6 +12,7 @@ import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import ReceiptScanner from "@/components/receipt/ReceiptScanner";
 import ReceiptEditList from "@/components/receipt/ReceiptEditList";
 import WAToneSelector from "@/components/organizer/WAToneSelector";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import Link from "next/link";
 import { useLang, createT } from "@/lib/language-context";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -610,19 +611,11 @@ export default function CreateBillClient() {
             {errors.length > 0 && <ErrorBox errors={errors} />}
 
             {/* Next CTA */}
-            <button
+            <PrimaryButton
               onClick={() => { if (validateStep1()) { setErrors([]); setStep(2); } }}
-              className="flex items-center justify-center gap-2 font-dm font-semibold text-sm active:scale-[0.97]"
-              style={{
-                background: "var(--gradient-deep-ocean)",
-                borderRadius: "75.024px",
-                padding: "14px 0",
-                color: "#000000",
-                transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
-              }}
             >
               {t.nextBtn} <ArrowRight size={16} />
-            </button>
+            </PrimaryButton>
           </motion.div>
         )}
 
@@ -766,24 +759,13 @@ export default function CreateBillClient() {
             {errors.length > 0 && <ErrorBox errors={errors} />}
 
             {/* Create CTA */}
-            <button
-              onClick={handleCreate}
-              disabled={creating}
-              className="flex items-center justify-center gap-2 font-dm font-semibold text-sm active:scale-[0.97] disabled:opacity-50"
-              style={{
-                background: "var(--gradient-deep-ocean)",
-                borderRadius: "75.024px",
-                padding: "14px 0",
-                color: "#000000",
-                transition: "transform 160ms cubic-bezier(0.23,1,0.32,1), opacity 200ms",
-              }}
-            >
+            <PrimaryButton onClick={handleCreate} disabled={creating}>
               {creating ? (
                 <span className="animate-pulse">{t.creating}</span>
               ) : (
                 <><Check size={16} /> {t.createBtn}</>
               )}
-            </button>
+            </PrimaryButton>
           </motion.div>
         )}
 
@@ -919,19 +901,9 @@ export default function CreateBillClient() {
             />
 
             {/* Dashboard CTA */}
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-center gap-2 font-dm font-semibold text-sm active:scale-[0.97]"
-              style={{
-                background: "var(--gradient-deep-ocean)",
-                borderRadius: "75.024px",
-                padding: "14px 0",
-                color: "#000000",
-                transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
-              }}
-            >
+            <PrimaryButton href="/dashboard">
               {t.dashboardBtn}
-            </Link>
+            </PrimaryButton>
           </motion.div>
         )}
 

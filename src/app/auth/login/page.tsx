@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
@@ -156,19 +157,12 @@ export default function LoginPage() {
               </motion.p>
             )}
 
-            <motion.button
-              variants={itemVariants}
-              type="submit"
-              disabled={loading}
-              className="mt-1 w-full py-3.5 rounded-pill-btn text-sm font-semibold text-midnight flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.97]"
-              style={{
-                background: "var(--gradient-deep-ocean)",
-                transition: "transform 160ms var(--ease-out), opacity 200ms",
-              }}
-            >
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              Log Masuk
-            </motion.button>
+            <motion.div variants={itemVariants} className="mt-1">
+              <PrimaryButton type="submit" disabled={loading}>
+                {loading && <Loader2 size={16} className="animate-spin" />}
+                Log Masuk
+              </PrimaryButton>
+            </motion.div>
           </motion.form>
         </motion.div>
 

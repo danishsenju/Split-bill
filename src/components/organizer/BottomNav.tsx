@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Receipt, Plus, Inbox, User, ArrowRight } from "lucide-react";
 import { useLang, navT } from "@/lib/language-context";
 import CategoryIcon from "@/components/ui/CategoryIcon";
-import { NoiseBackground } from "@/components/ui/NoiseBackground";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 const CATEGORIES = [
   { key: "🍽️ Makan",     label: "Food" },
@@ -174,13 +174,14 @@ export default function BottomNav() {
                   Pilih Kategori
                 </p>
 
-                {/* 4×2 grid */}
+                {/* 4×2 grid — monopo style: monochrome, distinction by surface */}
                 <div className="grid grid-cols-4 gap-3 mb-6">
                   {CATEGORIES.map(({ key, label }, i) => {
                     const isSelected = selected === key;
                     return (
-                      <motion.div
+                      <motion.button
                         key={key}
+                        type="button"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
@@ -188,59 +189,70 @@ export default function BottomNav() {
                           delay: i * 0.03,
                           ease: [0.23, 1, 0.32, 1],
                         }}
-                        whileTap={{ scale: 0.94 }}
+                        whileTap={{ scale: 0.96 }}
                         onClick={() => setSelected(key)}
-                        className="cursor-pointer"
-                      >
-                        <NoiseBackground
-                          borderRadius="14px"
-                          gradientColors={
+                        className="relative overflow-hidden flex flex-col items-center justify-center gap-2 py-5 px-2"
+                        style={{
+                          background: isSelected ? "#161616" : "#0a0a0a",
+                          border: `1px solid ${
                             isSelected
-                              ? ["rgb(10,30,80)", "rgb(15,50,120)", "rgb(20,70,160)"]
-                              : ["rgb(5,15,50)", "rgb(10,30,80)", "rgb(15,50,120)"]
-                          }
-                          speed={isSelected ? 0.04 : 0.02}
-                          className="flex flex-col items-center gap-2 py-3 px-1"
-                        >
-                          <CategoryIcon category={key} size={28} />
-                          <span
-                            className="font-dm leading-none text-center"
+                              ? "rgba(255,255,255,0.40)"
+                              : "rgba(255,255,255,0.06)"
+                          }`,
+                          borderRadius: "14px",
+                          transition:
+                            "background 220ms cubic-bezier(0.23,1,0.32,1), border-color 220ms cubic-bezier(0.23,1,0.32,1)",
+                        }}
+                      >
+                        {/* Deep Ocean halo — only on selected, atmospheric warmth */}
+                        {isSelected && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                            className="absolute inset-0 pointer-events-none"
                             style={{
-                              fontSize: "10px",
-                              color: isSelected ? "#D4AF37" : "#8B9E88",
+                              background:
+                                "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(255,172,46,0.08) 0%, transparent 65%)",
+                              filter: "blur(8px)",
                             }}
-                          >
-                            {label}
-                          </span>
-                        </NoiseBackground>
-                      </motion.div>
+                          />
+                        )}
+
+                        <span className="relative z-10">
+                          <CategoryIcon
+                            category={key}
+                            size={28}
+                            selected={isSelected}
+                          />
+                        </span>
+                        <span
+                          className="relative z-10 font-dm leading-none text-center"
+                          style={{
+                            fontSize: "10px",
+                            letterSpacing: isSelected ? "0" : "0.04em",
+                            fontWeight: isSelected ? 500 : 400,
+                            color: isSelected ? "#F5F0E8" : "#6d6d6d",
+                            transition:
+                              "color 220ms cubic-bezier(0.23,1,0.32,1), letter-spacing 220ms",
+                          }}
+                        >
+                          {label}
+                        </span>
+                      </motion.button>
                     );
                   })}
                 </div>
 
                 {/* Confirm button */}
-                <motion.button
+                <PrimaryButton
                   onClick={confirm}
                   disabled={!selected}
-                  whileTap={selected ? { scale: 0.97 } : {}}
-                  transition={{ duration: 0.12 }}
-                  className="w-full flex items-center justify-center gap-2 font-dm font-semibold"
-                  style={{
-                    height: "52px",
-                    borderRadius: "14px",
-                    fontSize: "15px",
-                    background: selected
-                      ? "var(--gradient-deep-ocean)"
-                      : "rgba(255,255,255,0.06)",
-                    color: selected ? "#000000" : "rgba(255,255,255,0.25)",
-                    transition:
-                      "background 200ms cubic-bezier(0.23,1,0.32,1), color 200ms cubic-bezier(0.23,1,0.32,1)",
-                    cursor: selected ? "pointer" : "not-allowed",
-                  }}
+                  innerClassName="py-3.5 text-[15px]"
                 >
                   Teruskan
                   <ArrowRight size={16} strokeWidth={2.5} />
-                </motion.button>
+                </PrimaryButton>
               </div>
             </motion.div>
           </>

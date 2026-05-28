@@ -325,6 +325,11 @@ export const dashboardT = {
     daysAgo: (n: number) => `${n}h lepas`,
     today: "Hari ini",
     daysLeft: (n: number) => `${n}h lagi`,
+    live: "Live",
+    collectedToday: "hari ni",
+    showMore: "Lihat lagi",
+    showingXofY: (shown: number, total: number) =>
+      `Menunjuk ${shown} dari ${total}`,
   },
   en: {
     greeting: "Good day,",
@@ -341,5 +346,10 @@ export const dashboardT = {
     daysAgo: (n: number) => `${n}d ago`,
     today: "Today",
     daysLeft: (n: number) => `${n}d left`,
+    live: "Live",
+    collectedToday: "today",
+    showMore: "Show more",
+    showingXofY: (shown: number, total: number) =>
+      `Showing ${shown} of ${total}`,
   },
 } as const;

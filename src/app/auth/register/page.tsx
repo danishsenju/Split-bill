@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Loader2, Upload, ChevronDown, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PaymentMethod } from "@/types";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
@@ -167,7 +168,7 @@ function RegisterForm() {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight mb-2">
             <span style={{ background: "var(--gradient-deep-ocean)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              bayarlah
+              kolekduit
             </span>
           </h1>
           <p className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>
@@ -309,16 +310,15 @@ function RegisterForm() {
                       )}
                     </motion.div>
 
-                    <motion.button
-                      variants={itemVariants}
-                      type="button"
-                      onClick={() => { if (canProceedStep1()) setStep(2); }}
-                      disabled={!canProceedStep1()}
-                      className="mt-1 w-full py-3.5 rounded-pill-btn text-sm font-semibold text-midnight flex items-center justify-center disabled:opacity-40 active:scale-[0.97]"
-                      style={{ background: "var(--gradient-deep-ocean)", transition: "transform 160ms var(--ease-out), opacity 200ms" }}
-                    >
-                      Seterusnya →
-                    </motion.button>
+                    <motion.div variants={itemVariants} className="mt-1">
+                      <PrimaryButton
+                        type="button"
+                        onClick={() => { if (canProceedStep1()) setStep(2); }}
+                        disabled={!canProceedStep1()}
+                      >
+                        Seterusnya →
+                      </PrimaryButton>
+                    </motion.div>
                   </motion.div>
                 </motion.div>
               )}
@@ -450,15 +450,15 @@ function RegisterForm() {
                     >
                       ← Balik
                     </button>
-                    <button
-                      type="submit"
-                      disabled={loading || (paymentMethod === "bank" && (!bankAccount || !bankHolder)) || (paymentMethod === "qr" && !qrFile)}
-                      className="flex-1 py-3.5 rounded-pill-btn text-sm font-semibold text-midnight flex items-center justify-center gap-2 disabled:opacity-40 active:scale-[0.97]"
-                      style={{ background: "var(--gradient-deep-ocean)", transition: "transform 160ms var(--ease-out), opacity 200ms" }}
-                    >
-                      {loading && <Loader2 size={16} className="animate-spin" />}
-                      Daftar Sekarang
-                    </button>
+                    <div className="flex-1">
+                      <PrimaryButton
+                        type="submit"
+                        disabled={loading || (paymentMethod === "bank" && (!bankAccount || !bankHolder)) || (paymentMethod === "qr" && !qrFile)}
+                      >
+                        {loading && <Loader2 size={16} className="animate-spin" />}
+                        Daftar Sekarang
+                      </PrimaryButton>
+                    </div>
                   </div>
                 </motion.div>
               )}

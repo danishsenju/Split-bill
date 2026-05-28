@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-
-const GRADIENT = "linear-gradient(90deg, rgb(160, 224, 171), rgb(255, 172, 46) 50%, rgb(165, 45, 37))";
-const PILL = "75.024px";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 interface Props {
   onComplete: (name: string) => void;
@@ -78,28 +76,10 @@ export default function GuestNameInput({ onComplete }: Props) {
         )}
       </div>
 
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={handleSubmit}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          background: GRADIENT,
-          color: "#000",
-          fontWeight: 700,
-          fontSize: "15px",
-          padding: "17px 28px",
-          borderRadius: PILL,
-          border: "none",
-          cursor: "pointer",
-          width: "100%",
-        }}
-      >
+      <PrimaryButton onClick={handleSubmit}>
         Teruskan
         <ArrowRight size={16} />
-      </motion.button>
+      </PrimaryButton>
 
       <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px", textAlign: "center" }}>
         Atau{" "}

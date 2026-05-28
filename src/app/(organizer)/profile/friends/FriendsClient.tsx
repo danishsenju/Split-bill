@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Search, UserPlus, UserMinus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 interface FriendProfile {
   id: string;
@@ -24,8 +25,6 @@ interface SearchResult {
   username?: string;
 }
 
-const GRADIENT = "linear-gradient(90deg, rgb(160, 224, 171), rgb(255, 172, 46) 50%, rgb(165, 45, 37))";
-const PILL = "75.024px";
 
 export default function FriendsClient({ initialFriends }: { initialFriends: Friendship[] }) {
   const router = useRouter();
@@ -204,22 +203,17 @@ export default function FriendsClient({ initialFriends }: { initialFriends: Frie
                         <p className="font-dm text-whisper" style={{ fontSize: "11px" }}>@{r.username}</p>
                       )}
                     </div>
-                    <button
-                      onClick={() => addFriend(r.id)}
-                      disabled={addingId === r.id}
-                      className="flex items-center gap-1.5 font-dm font-semibold shrink-0 active:scale-[0.92] disabled:opacity-50"
-                      style={{
-                        background: GRADIENT,
-                        borderRadius: PILL,
-                        padding: "6px 14px",
-                        color: "#000000",
-                        fontSize: "12px",
-                        transition: "transform 120ms cubic-bezier(0.23,1,0.32,1), opacity 200ms",
-                      }}
-                    >
-                      <UserPlus size={12} />
-                      {addingId === r.id ? "..." : "Tambah"}
-                    </button>
+                    <div className="shrink-0">
+                      <PrimaryButton
+                        onClick={() => addFriend(r.id)}
+                        disabled={addingId === r.id}
+                        fullWidth={false}
+                        innerClassName="py-1.5 px-3.5 text-xs"
+                      >
+                        <UserPlus size={12} />
+                        {addingId === r.id ? "..." : "Tambah"}
+                      </PrimaryButton>
+                    </div>
                   </div>
                 ))}
                 {!searching && results.length === 0 && query.length >= 2 && (

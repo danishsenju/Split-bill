@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Upload, Loader2, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PaymentMethod } from "@/types";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
@@ -305,19 +306,10 @@ export default function AddPaymentPage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="w-full py-3.5 rounded-[14px] text-sm font-semibold text-midnight flex items-center justify-center gap-2 disabled:opacity-40 active:scale-[0.97]"
-          style={{
-            background: success ? "#00D084" : "var(--gradient-deep-ocean)",
-            color: "#000000",
-            transition: "transform 160ms, background 250ms, opacity 200ms",
-          }}
-        >
+        <PrimaryButton type="submit" disabled={!canSubmit}>
           {loading && <Loader2 size={16} className="animate-spin" />}
           {success ? "Tersimpan ✓" : "Simpan"}
-        </button>
+        </PrimaryButton>
       </form>
     </div>
   );

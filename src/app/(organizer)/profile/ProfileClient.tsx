@@ -19,6 +19,7 @@ import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { getInitial, maskAccount, formatRM } from "@/lib/utils";
 import Aurora from "@/components/ui/Aurora";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useLang, profileT } from "@/lib/language-context";
 
 interface Props {
@@ -184,7 +185,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
         >
           <SectionLabel label={t.sectionPayment}>
             <Link
-              href="/auth/register"
+              href="/profile/payment"
               className="font-dm text-whisper active:opacity-50"
               style={{ fontSize: "12px", transition: "opacity 150ms" }}
             >
@@ -270,19 +271,15 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                   <CreditCard size={20} style={{ color: "#6d6d6d" }} />
                 </div>
                 <p className="font-dm text-whisper text-sm">{t.noPayment}</p>
-                <Link
-                  href="/profile/payment"
-                  className="font-dm font-semibold text-sm active:scale-[0.97]"
-                  style={{
-                    background: "var(--gradient-deep-ocean)",
-                    borderRadius: "75.024px",
-                    padding: "8px 20px",
-                    color: "#000000",
-                    transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
-                  }}
-                >
-                  {t.addNow}
-                </Link>
+                <div className="w-fit">
+                  <PrimaryButton
+                    href="/profile/payment"
+                    fullWidth={false}
+                    innerClassName="py-2 px-5 text-sm"
+                  >
+                    {t.addNow}
+                  </PrimaryButton>
+                </div>
               </div>
             )}
           </div>
@@ -401,12 +398,14 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
                     style={{
                       position: "absolute",
                       top: "2px",
-                      left: waNotif ? "22px" : "2px",
+                      left: "2px",
                       width: "20px",
                       height: "20px",
                       borderRadius: "50%",
                       background: waNotif ? "#000000" : "#6d6d6d",
-                      transition: "left 250ms cubic-bezier(0.23,1,0.32,1)",
+                      transform: waNotif ? "translateX(20px)" : "translateX(0)",
+                      transition: "transform 250ms cubic-bezier(0.23,1,0.32,1), background 250ms cubic-bezier(0.23,1,0.32,1)",
+                      willChange: "transform",
                     }}
                   />
                 </button>

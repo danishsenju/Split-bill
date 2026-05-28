@@ -12,6 +12,7 @@ import SwipeConfirm from "@/components/ui/SwipeConfirm";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Confetti from "@/components/ui/Confetti";
 import Grainient from "@/components/ui/Grainient";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 
 interface OrganizerProfile {
   name: string;
@@ -44,22 +45,6 @@ const glass: CSSProperties = {
   backdropFilter: "blur(16px)",
 };
 
-const primaryBtn: CSSProperties = {
-  borderRadius: PILL,
-  background: GRADIENT,
-  color: "#000",
-  fontWeight: 600,
-  fontSize: "15px",
-  padding: "17px 28px",
-  width: "100%",
-  border: "none",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  letterSpacing: "0.01em",
-};
 
 const ghostPill: CSSProperties = {
   borderRadius: PILL,
@@ -401,9 +386,9 @@ export default function PayPageClient({
           <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "14px", lineHeight: 1.6 }}>
             Link ini bukan untuk anda atau telah tamat. Hubungi penganjur untuk link peribadi anda.
           </p>
-          <Link href="/auth/login" style={{ ...primaryBtn, textDecoration: "none", marginTop: "8px" }}>
-            Log Masuk
-          </Link>
+          <div style={{ marginTop: "8px", width: "100%" }}>
+            <PrimaryButton href="/auth/login">Log Masuk</PrimaryButton>
+          </div>
         </motion.div>
       </div>
     );
@@ -492,10 +477,10 @@ export default function PayPageClient({
               </div>
 
               {/* CTA */}
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowPaymentSheet(true)} style={primaryBtn}>
+              <PrimaryButton onClick={() => setShowPaymentSheet(true)}>
                 Buat Bayaran
                 <ChevronRight size={18} />
-              </motion.button>
+              </PrimaryButton>
 
               {/* Payment bottom sheet */}
               <BottomSheet open={showPaymentSheet} onClose={() => setShowPaymentSheet(false)} title="Kaedah Bayaran">
@@ -565,10 +550,12 @@ export default function PayPageClient({
                   </div>
                 )}
 
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setShowPaymentSheet(false); setEqualStep("swipe"); }} style={{ ...primaryBtn, marginTop: "20px" }}>
-                  Dah Transfer?
-                  <ChevronRight size={16} />
-                </motion.button>
+                <div style={{ marginTop: "20px" }}>
+                  <PrimaryButton onClick={() => { setShowPaymentSheet(false); setEqualStep("swipe"); }}>
+                    Dah Transfer?
+                    <ChevronRight size={16} />
+                  </PrimaryButton>
+                </div>
               </BottomSheet>
             </motion.div>
           )}
@@ -782,14 +769,12 @@ export default function PayPageClient({
               </span>
             </div>
 
-            <motion.button
-              whileTap={{ scale: hasAnyClaim ? 0.97 : 1 }}
+            <PrimaryButton
               onClick={submitClaims}
               disabled={!hasAnyClaim || submittingClaims}
-              style={{ ...primaryBtn, opacity: !hasAnyClaim || submittingClaims ? 0.5 : 1, cursor: !hasAnyClaim ? "not-allowed" : "pointer" }}
             >
               {submittingClaims ? "Menyimpan..." : "Seterusnya"} <ChevronRight size={16} />
-            </motion.button>
+            </PrimaryButton>
           </motion.div>
         )}
 
@@ -903,9 +888,9 @@ export default function PayPageClient({
               )}
             </div>
 
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScanStep("bayar")} style={primaryBtn}>
+            <PrimaryButton onClick={() => setScanStep("bayar")}>
               Teruskan ke Bayaran <ChevronRight size={16} />
-            </motion.button>
+            </PrimaryButton>
 
             {/* Flag bottom sheet */}
             <BottomSheet open={!!flagSheetItem} onClose={() => { setFlagSheetItem(null); setFlagNote(""); }} title="Flag Item">
@@ -933,14 +918,9 @@ export default function PayPageClient({
                       }}
                     />
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={submitFlag}
-                    disabled={submittingFlag}
-                    style={{ ...primaryBtn, opacity: submittingFlag ? 0.6 : 1 }}
-                  >
+                  <PrimaryButton onClick={submitFlag} disabled={submittingFlag}>
                     <Flag size={14} /> {submittingFlag ? "Menghantar..." : "Hantar Flag"}
-                  </motion.button>
+                  </PrimaryButton>
                   <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "11px", textAlign: "center", lineHeight: 1.5 }}>
                     Flag tak menghalang bayaran. Organizer akan dimaklumkan untuk semak.
                   </p>
@@ -1169,12 +1149,11 @@ function SuccessScreen({ name, billTitle, amountOwed, memberToken, dismissPromo,
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", lineHeight: 1.6, marginBottom: "18px" }}>
             Buat bil sendiri, track siapa dah bayar, hantar reminder WhatsApp — semua dalam satu app.
           </p>
-          <Link
+          <PrimaryButton
             href={`/auth/register?name=${encodeURIComponent(name)}&token=${encodeURIComponent(memberToken)}`}
-            style={{ ...primaryBtn, textDecoration: "none" }}
           >
             Daftar Percuma →
-          </Link>
+          </PrimaryButton>
         </motion.div>
       )}
     </motion.div>
