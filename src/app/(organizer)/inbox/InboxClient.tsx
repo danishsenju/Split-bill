@@ -206,9 +206,9 @@ export default function InboxClient({ activities }: Props) {
                 borderRadius: "75.024px",
                 border:
                   filter === key
-                    ? "1px solid rgba(255,255,255,0.3)"
+                    ? "1px solid var(--theme-border-strong)"
                     : "1px solid transparent",
-                color: filter === key ? "#ffffff" : "#6d6d6d",
+                color: filter === key ? "var(--theme-text)" : "var(--theme-text-muted)",
                 background: "transparent",
                 transition:
                   "color 150ms cubic-bezier(0.23,1,0.32,1), border-color 150ms cubic-bezier(0.23,1,0.32,1), transform 120ms",

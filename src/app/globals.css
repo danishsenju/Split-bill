@@ -83,6 +83,18 @@
     border-color 320ms var(--ease-out);
 }
 
+/* ── Text utility classes that map to theme tokens ──────────────────── */
+.theme-text { color: var(--theme-text) !important; }
+.theme-text-strong { color: var(--theme-text-strong) !important; }
+.theme-text-secondary { color: var(--theme-text-secondary) !important; }
+.theme-text-muted { color: var(--theme-text-muted) !important; }
+.theme-text-faint { color: var(--theme-text-faint) !important; }
+
+/* Surface utility */
+.theme-bg-card { background: var(--theme-bg-card) !important; }
+.theme-bg-elevated { background: var(--theme-bg-elevated) !important; }
+.theme-border { border-color: var(--theme-border) !important; }
+
 * {
   box-sizing: border-box;
   margin: 0;

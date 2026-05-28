@@ -38,7 +38,7 @@ export default function CategoryIcon({
     className,
     strokeWidth: selected ? 2 : 1.5,
     style: {
-      color: selected ? "#FFFFFF" : "#F5F0E8",
+      color: selected ? "var(--theme-text-strong)" : "var(--theme-text)",
       transition:
         "color 220ms cubic-bezier(0.23,1,0.32,1), stroke-width 220ms cubic-bezier(0.23,1,0.32,1)",
       ...style,

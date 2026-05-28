@@ -42,12 +42,12 @@ export default function TopNav() {
 
   return (
     <header
-      className="hidden md:block fixed top-0 left-0 right-0 z-40"
+      className="hidden md:block fixed top-0 left-0 right-0 z-40 theme-aware"
       style={{
-        background: "rgba(0, 0, 0, 0.88)",
+        background: "var(--theme-bg-overlay)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+        borderBottom: "1px solid var(--theme-border)",
       }}
     >
       <div className="max-w-2xl mx-auto px-6 h-[60px] flex items-center justify-between">
@@ -55,8 +55,8 @@ export default function TopNav() {
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center">
           <span
-            className="font-clash font-bold leading-none"
-            style={{ fontSize: "20px", color: "#ffffff" }}
+            className="font-clash font-bold leading-none theme-aware"
+            style={{ fontSize: "20px", color: "var(--theme-text)" }}
           >
             Bayar
             <span
@@ -104,7 +104,9 @@ export default function TopNav() {
                 href={href}
                 className="relative flex flex-col items-center gap-0.5 font-dm text-sm transition-colors duration-150"
                 style={{
-                  color: active ? "#ffffff" : "#6d6d6d",
+                  color: active
+                    ? "var(--theme-text)"
+                    : "var(--theme-text-muted)",
                   transition: "color 150ms cubic-bezier(0.23, 1, 0.32, 1)",
                 }}
               >
@@ -132,7 +134,7 @@ export default function TopNav() {
             className="flex items-center gap-1.5 active:opacity-70"
             style={{
               background: "transparent",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
+              border: "1px solid var(--theme-border-strong)",
               borderRadius: "75.024px",
               padding: "4px 10px 4px 5px",
               transition: "border-color 150ms cubic-bezier(0.23, 1, 0.32, 1)",
@@ -141,16 +143,20 @@ export default function TopNav() {
             <span
               className="w-6 h-6 rounded-full flex items-center justify-center font-clash font-bold"
               style={{
-                background: "#1a1a1a",
-                color: "#ffffff",
+                background: "var(--theme-bg-card)",
+                color: "var(--theme-text)",
                 fontSize: "11px",
+                border: "1px solid var(--theme-border)",
               }}
             >
               {userInitial}
             </span>
             <ChevronDown
               size={12}
-              style={{ color: "#6d6d6d", transition: "transform 150ms" }}
+              style={{
+                color: "var(--theme-text-muted)",
+                transition: "transform 150ms",
+              }}
               className={showDropdown ? "rotate-180" : ""}
             />
           </button>

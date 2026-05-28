@@ -22,11 +22,11 @@ const config: Config = {
         "text-muted": "#3D4D6A",
         border: "rgba(232,184,75,0.12)",
         glass: "rgba(232,184,75,0.06)",
-        // monopo design tokens
-        "midnight": "#000000",
-        "frost":    "#ffffff",
-        "whisper":  "#6d6d6d",
-        "deep-shadow": "#111111",
+        // monopo design tokens — wired to theme vars so they swap with mode
+        "midnight": "var(--theme-bg)",
+        "frost":    "var(--theme-text)",
+        "whisper":  "var(--theme-text-muted)",
+        "deep-shadow": "var(--theme-bg-card)",
       },
       fontFamily: {
         sans: ["var(--font-plus-jakarta)", "Plus Jakarta Sans", "sans-serif"],

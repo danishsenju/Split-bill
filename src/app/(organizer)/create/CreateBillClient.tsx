@@ -156,7 +156,7 @@ function FriendPickerSheet({
                 >
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center font-clash font-bold shrink-0"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#ffffff", fontSize: "13px" }}
+                    style={{ background: "var(--theme-surface-tint-2)", color: "var(--theme-text)", fontSize: "13px" }}
                   >
                     {p.name.charAt(0).toUpperCase()}
                   </div>
@@ -199,7 +199,7 @@ const fieldBase: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: "10px",
   padding: "12px 16px",
-  color: "#ffffff",
+  color: "var(--theme-text)",
   width: "100%",
   fontSize: "14px",
   fontFamily: "inherit",
@@ -1236,7 +1236,7 @@ export default function CreateBillClient() {
                 <div key={i} className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center font-clash font-bold shrink-0"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#ffffff", fontSize: "12px" }}
+                    style={{ background: "var(--theme-surface-tint-2)", color: "var(--theme-text)", fontSize: "12px" }}
                   >
                     {m.name.charAt(0).toUpperCase()}
                   </div>

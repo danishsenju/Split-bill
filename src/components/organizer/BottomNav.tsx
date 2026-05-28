@@ -144,11 +144,11 @@ export default function BottomNav() {
             {/* Sheet */}
             <motion.div
               key="sheet"
-              className="fixed bottom-0 left-0 right-0 max-w-mobile mx-auto z-50"
+              className="fixed bottom-0 left-0 right-0 max-w-mobile mx-auto z-50 theme-aware"
               style={{
-                background: "#0D0D0D",
+                background: "var(--theme-bg-elevated)",
                 borderRadius: "24px 24px 0 0",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
+                borderTop: "1px solid var(--theme-border)",
               }}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -170,8 +170,8 @@ export default function BottomNav() {
               <div className="px-5 pt-2 pb-8">
                 {/* Heading */}
                 <p
-                  className="font-syne font-bold mb-5"
-                  style={{ fontSize: "18px", color: "#F5F0E8" }}
+                  className="font-syne font-bold mb-5 theme-aware"
+                  style={{ fontSize: "18px", color: "var(--theme-text)" }}
                 >
                   Pilih Kategori
                 </p>
@@ -195,11 +195,13 @@ export default function BottomNav() {
                         onClick={() => setSelected(key)}
                         className="relative overflow-hidden flex flex-col items-center justify-center gap-2 py-5 px-2"
                         style={{
-                          background: isSelected ? "#161616" : "#0a0a0a",
+                          background: isSelected
+                            ? "var(--theme-press-tint)"
+                            : "var(--theme-surface-tint)",
                           border: `1px solid ${
                             isSelected
-                              ? "rgba(255,255,255,0.40)"
-                              : "rgba(255,255,255,0.06)"
+                              ? "var(--theme-border-strong)"
+                              : "var(--theme-border)"
                           }`,
                           borderRadius: "14px",
                           transition:
@@ -234,7 +236,9 @@ export default function BottomNav() {
                             fontSize: "10px",
                             letterSpacing: isSelected ? "0" : "0.04em",
                             fontWeight: isSelected ? 500 : 400,
-                            color: isSelected ? "#F5F0E8" : "#6d6d6d",
+                            color: isSelected
+                              ? "var(--theme-text)"
+                              : "var(--theme-text-muted)",
                             transition:
                               "color 220ms cubic-bezier(0.23,1,0.32,1), letter-spacing 220ms",
                           }}

@@ -331,7 +331,7 @@ export default function BillDetailClient({
             className="flex items-center gap-3 px-4 py-3.5"
           >
             <div className="flex-1">
-              <p className="font-dm text-[11px] text-white/30 mb-1">Pay Code</p>
+              <p className="font-dm text-[11px] theme-text-muted mb-1">Pay Code</p>
               <p
                 className="font-jetbrains font-medium text-lg tracking-[3px]"
                 style={{
@@ -394,7 +394,7 @@ export default function BillDetailClient({
                     <p className="font-dm text-sm font-semibold" style={{ color: "rgb(255,172,46)" }}>
                       {t.flagAlert(flags.length)}
                     </p>
-                    <p className="font-dm text-xs text-white/30">{t.flagSub}</p>
+                    <p className="font-dm text-xs theme-text-muted">{t.flagSub}</p>
                   </div>
                 </div>
               </Link>
@@ -408,7 +408,7 @@ export default function BillDetailClient({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2, delay: 0.12, ease: EASE_OUT }}
           onClick={() => members.filter((m) => !m.paid && m.phone).forEach(sendReminder)}
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full font-dm text-sm text-white/50"
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full font-dm text-sm theme-text-secondary"
           style={{
             background: "var(--theme-surface-tint)",
             border: "1px solid rgba(255,255,255,0.09)",
@@ -425,7 +425,7 @@ export default function BillDetailClient({
         {/* ── Unpaid members ── */}
         {unpaidMembers.length > 0 && (
           <div className="flex flex-col gap-2 mt-1">
-            <p className="font-dm text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25 px-0.5">
+            <p className="font-dm text-[10px] font-semibold uppercase tracking-[0.12em] theme-text-faint px-0.5">
               {t.unpaidSection(unpaidMembers.length)}
             </p>
             {unpaidMembers.map((member, i) => (
@@ -455,26 +455,27 @@ export default function BillDetailClient({
                   borderColor: { duration: 0.4, ease: EASE_OUT },
                 }}
                 className="relative flex items-center gap-3 px-4 py-3.5 rounded-[12px]"
-                style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+                style={{ border: "1px solid var(--theme-border)" }}
               >
                 {/* Avatar */}
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center font-clash font-bold text-sm shrink-0 text-white/50"
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-clash font-bold text-sm shrink-0"
                   style={{
                     background: "var(--theme-surface-tint-2)",
-                    border: "1px solid rgba(255,255,255,0.09)",
+                    border: "1px solid var(--theme-border)",
+                    color: "var(--theme-text-secondary)",
                   }}
                 >
                   {getInitial(member.name)}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-dm font-medium text-sm text-white truncate">{member.name}</p>
-                  <p className="font-dm text-xs text-white/30">{member.phone ?? t.noPhone}</p>
+                  <p className="font-dm font-medium text-sm theme-text truncate">{member.name}</p>
+                  <p className="font-dm text-xs theme-text-muted">{member.phone ?? t.noPhone}</p>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="font-clash font-semibold text-sm text-white">
+                  <span className="font-clash font-semibold text-sm theme-text">
                     {formatRM(member.amount_owed)}
                   </span>
                   <div className="flex gap-1.5">
@@ -519,7 +520,7 @@ export default function BillDetailClient({
         {/* ── Paid members — horizontal scroll ── */}
         {paidMembers.length > 0 && (
           <div className="flex flex-col gap-2 mt-1">
-            <p className="font-dm text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25 px-0.5">
+            <p className="font-dm text-[10px] font-semibold uppercase tracking-[0.12em] theme-text-faint px-0.5">
               {t.paidSection(paidMembers.length)}
             </p>
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
@@ -549,18 +550,18 @@ export default function BillDetailClient({
                       <Check size={9} color="#000" strokeWidth={3} />
                     </span>
                   </div>
-                  <p className="font-dm text-[10px] text-white/35 truncate w-full text-center">
+                  <p className="font-dm text-[10px] theme-text-muted truncate w-full text-center">
                     {member.name.split(" ")[0]}
                   </p>
                   {member.paid_at && (
-                    <p className="font-dm text-[9px] text-white/20 text-center leading-tight">
+                    <p className="font-dm text-[9px] theme-text-faint text-center leading-tight">
                       {formatTime(member.paid_at)}
                     </p>
                   )}
                   <button
                     onClick={() => togglePaid(member.id, true)}
                     disabled={marking === member.id}
-                    className="font-dm text-[9px] text-white/20 mt-0.5"
+                    className="font-dm text-[9px] theme-text-faint mt-0.5"
                     style={{ transition: "opacity 150ms cubic-bezier(0.23,1,0.32,1)" }}
                     onPointerDown={(e) => (e.currentTarget.style.opacity = "0.5")}
                     onPointerUp={(e) => (e.currentTarget.style.opacity = "1")}

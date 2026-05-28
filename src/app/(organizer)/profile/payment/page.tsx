@@ -38,7 +38,7 @@ function FieldInput({
         background: "rgba(255,255,255,0.06)",
         border: "1px solid rgba(255,255,255,0.12)",
         outline: "none",
-        color: "#ffffff",
+        color: "var(--theme-text)",
         transition: "border-color 150ms",
       }}
       onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
@@ -204,7 +204,7 @@ export default function AddPaymentPage() {
                   style={{
                     background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    color: "#ffffff",
+                    color: "var(--theme-text)",
                     transition: "transform 160ms",
                   }}
                 >
