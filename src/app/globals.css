@@ -52,36 +52,6 @@
   --theme-mode-indicator: 0; /* 0 = dark, 1 = light — for conditional CSS */
 }
 
-[data-theme="light"] {
-  --theme-bg: #F5F0E8;
-  --theme-bg-elevated: #ffffff;
-  --theme-bg-card: #ffffff;
-  --theme-bg-overlay: rgba(245, 240, 232, 0.55);
-  --theme-text: #0a0a0a;
-  --theme-text-strong: #000000;
-  --theme-text-secondary: rgba(10, 10, 10, 0.62);
-  --theme-text-muted: rgba(10, 10, 10, 0.42);
-  --theme-text-faint: rgba(10, 10, 10, 0.22);
-  --theme-border: rgba(10, 10, 10, 0.08);
-  --theme-border-strong: rgba(10, 10, 10, 0.24);
-  --theme-hairline: rgba(10, 10, 10, 0.07);
-  --theme-surface-tint: rgba(10, 10, 10, 0.04);
-  --theme-surface-tint-2: rgba(10, 10, 10, 0.06);
-  --theme-press-tint: rgba(10, 10, 10, 0.06);
-  --theme-shadow-elevated: 0 8px 24px rgba(10, 10, 10, 0.10);
-  --theme-text-shadow-hero: 0 2px 12px rgba(255, 255, 255, 0.4);
-  --theme-atmosphere-opacity: 0.45;
-  --theme-mode-indicator: 1;
-}
-
-/* Smooth theme transitions on surfaces that opt in via theme-aware vars */
-[data-theme] body,
-[data-theme] .theme-aware {
-  transition:
-    background-color 320ms var(--ease-out),
-    color 320ms var(--ease-out),
-    border-color 320ms var(--ease-out);
-}
 
 /* ── Text utility classes that map to theme tokens ──────────────────── */
 .theme-text { color: var(--theme-text) !important; }

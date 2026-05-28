@@ -14,16 +14,13 @@ import {
   CreditCard,
   QrCode,
   Users,
-  Palette,
 } from "lucide-react";
 import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { getInitial, maskAccount, formatRM } from "@/lib/utils";
 import Aurora from "@/components/ui/Aurora";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useLang, profileT } from "@/lib/language-context";
-import { useTheme } from "@/lib/theme-context";
 
 interface Props {
   profile: Profile | null;
@@ -83,7 +80,6 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
   const router = useRouter();
   const { lang, setLang } = useLang();
   const t = profileT[lang];
-  const { theme } = useTheme();
   const [loggingOut, setLoggingOut] = useState(false);
   const [reminderDays, setReminderDays] = useState(3);
   const [waNotif, setWaNotif] = useState(true);
@@ -327,16 +323,6 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
               overflow: "hidden",
             }}
           >
-            {/* Theme — light/dark toggle */}
-            <SettingRow
-              icon={<Palette size={16} />}
-              label={t.themeLabel}
-              sublabel={
-                theme === "light" ? t.themeSubLight : t.themeSubDark
-              }
-              right={<ThemeToggle />}
-            />
-
             {/* Reminder days */}
             <SettingRow
               icon={<Bell size={16} />}
