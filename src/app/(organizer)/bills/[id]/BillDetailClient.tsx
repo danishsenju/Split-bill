@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Share2, Bell, Flag, Check, Copy } from "lucide-react";
 import { Bill, Flag as FlagType } from "@/types";
 import { createClient } from "@/lib/supabase";
-import { formatRM, formatDaysRemaining, getDaysRemaining, getInitial, formatTime } from "@/lib/utils";
+import { formatRM, formatDaysRemaining, getDaysRemaining, getInitial, formatTime, categoryTone } from "@/lib/utils";
 import { buildWAUrl, buildWAMessage } from "@/lib/whatsapp";
 import Link from "next/link";
-import { NoiseBackground } from "@/components/ui/NoiseBackground";
 import { useLang, billDetailT } from "@/lib/language-context";
+import { useMotionValue, animate } from "framer-motion";
+import { NoiseBackground } from "@/components/ui/NoiseBackground";
 
 // Emil: strong ease-out — starts fast, gives instant feedback on enter
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
@@ -74,6 +75,9 @@ export default function BillDetailClient({
 
   async function togglePaid(memberId: string, currentPaid: boolean) {
     setMarking(memberId);
+    // Haptic feedback — celebrates the moment on supported devices
+    if (!currentPaid) navigator.vibrate?.([12, 30, 18]);
+    else navigator.vibrate?.(15);
     const supabase = createClient();
     await supabase.from("bill_members").update({
       paid: !currentPaid,
@@ -102,131 +106,209 @@ export default function BillDetailClient({
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const cat = categoryTone(bill.category);
+
   return (
-    <div className="min-h-dvh bg-[#000]">
-      {/* ── Hero with Deep Ocean Gradient atmosphere ── */}
+    <div className="min-h-dvh" style={{ background: "#000" }}>
+      {/* ══════════════════════════════════════════════════════════════════
+          HERO — category-themed atmospheric backdrop
+      ═══════════════════════════════════════════════════════════════════ */}
       <div className="relative overflow-hidden">
-        {/* Ambient gradient layer */}
-        <div
-          className="pointer-events-none absolute inset-0"
+        {/* Category-themed atmospheric orbs */}
+        <motion.div
+          aria-hidden
+          animate={{ x: ["0%", "8%", "0%"], y: ["0%", "-6%", "0%"] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute pointer-events-none"
           style={{
-            background:
-              "radial-gradient(ellipse 120% 80% at 20% -10%, rgba(160,224,171,0.18) 0%, transparent 55%), " +
-              "radial-gradient(ellipse 80% 60% at 85% 110%, rgba(165,45,37,0.14) 0%, transparent 55%)",
+            top: "-30%",
+            left: "-20%",
+            width: "75%",
+            paddingBottom: "75%",
+            borderRadius: "50%",
+            background: `radial-gradient(circle, rgba(${cat.rgb},0.28) 0%, transparent 65%)`,
+            filter: "blur(48px)",
+          }}
+        />
+        <motion.div
+          aria-hidden
+          animate={{ x: ["0%", "-6%", "0%"], y: ["0%", "5%", "0%"] }}
+          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute pointer-events-none"
+          style={{
+            top: "20%",
+            right: "-20%",
+            width: "70%",
+            paddingBottom: "70%",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(245,240,232,0.10) 0%, transparent 60%)",
+            filter: "blur(56px)",
           }}
         />
 
         {/* Sticky header */}
         <div
           className="sticky top-0 z-20 flex items-center gap-3 px-4 pb-3 md:top-[60px]"
-          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(20px)", paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
+          style={{
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            paddingTop: "calc(env(safe-area-inset-top) + 16px)",
+            borderBottom: "1px solid rgba(255,255,255,0.04)",
+          }}
         >
-          <button
+          <motion.button
             onClick={() => router.back()}
-            /* Emil: 160ms ease-out, only transform */
-            className="p-1 text-white/50"
-            style={{ transition: "transform 160ms cubic-bezier(0.23,1,0.32,1), opacity 160ms cubic-bezier(0.23,1,0.32,1)" }}
-            onPointerDown={(e) => (e.currentTarget.style.transform = "scale(0.88)")}
-            onPointerUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onPointerLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            whileTap={{ scale: 0.88 }}
+            transition={{ type: "spring", stiffness: 400, damping: 22 }}
+            className="p-1"
+            style={{ color: "rgba(245,240,232,0.7)" }}
           >
             <ArrowLeft size={22} />
-          </button>
-          <h1 className="flex-1 truncate font-clash text-white text-base">{bill.title}</h1>
-          <button
-            onClick={() => navigator.share?.({ url: `${appUrl}/bills/${bill.id}` })}
-            className="p-1 text-white/50"
-            style={{ transition: "transform 160ms cubic-bezier(0.23,1,0.32,1), opacity 160ms cubic-bezier(0.23,1,0.32,1)" }}
-            onPointerDown={(e) => (e.currentTarget.style.transform = "scale(0.88)")}
-            onPointerUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onPointerLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          </motion.button>
+          <h1
+            className="flex-1 truncate font-clash"
+            style={{
+              fontSize: "15px",
+              fontWeight: 500,
+              color: "#F5F0E8",
+              letterSpacing: "-0.005em",
+            }}
           >
-            <Share2 size={20} />
-          </button>
+            {bill.title}
+          </h1>
+          <motion.button
+            onClick={() => navigator.share?.({ url: `${appUrl}/bills/${bill.id}` })}
+            whileTap={{ scale: 0.88 }}
+            transition={{ type: "spring", stiffness: 400, damping: 22 }}
+            className="p-1"
+            style={{ color: "rgba(245,240,232,0.7)" }}
+          >
+            <Share2 size={19} />
+          </motion.button>
         </div>
 
         {/* Hero body */}
-        <div className="relative px-5 pt-5 pb-8">
-          {/* Category + due date */}
-          <div className="flex items-center justify-between mb-5">
+        <div className="relative px-5 pt-5 pb-9">
+          {/* Editorial: category kicker + title + due chip */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE_OUT }}
+            className="flex items-center justify-between mb-5"
+          >
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{bill.category.split(" ")[0]}</span>
-              <span className="font-dm text-sm text-white/40">
+              <span
+                className="font-dm uppercase"
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.22em",
+                  color: cat.hex,
+                  textShadow: `0 0 12px ${cat.hex}33`,
+                }}
+              >
                 {bill.category.replace(/^\S+\s*/, "")}
               </span>
             </div>
-            <span
-              className="font-dm text-xs font-medium px-3 py-1 rounded-full"
+            <motion.span
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.3, ease: EASE_OUT }}
+              className="font-dm font-medium px-3 py-1 rounded-full"
               style={{
-                background: isOverdue ? "rgba(165,45,37,0.2)" : "rgba(255,172,46,0.12)",
-                color: isOverdue ? "rgb(220,90,80)" : "rgb(255,172,46)",
-                border: `1px solid ${isOverdue ? "rgba(165,45,37,0.35)" : "rgba(255,172,46,0.25)"}`,
+                fontSize: "11px",
+                background: isOverdue ? "rgba(255,107,107,0.10)" : "rgba(255,172,46,0.10)",
+                color: isOverdue ? "#FF6B6B" : "#FFAC2E",
+                border: `1px solid ${isOverdue ? "rgba(255,107,107,0.28)" : "rgba(255,172,46,0.22)"}`,
+                letterSpacing: "0.02em",
               }}
             >
               {formatDaysRemaining(bill.due_date)}
-            </span>
-          </div>
+            </motion.span>
+          </motion.div>
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            {[
-              { label: t.statCollected, value: formatRM(amountCollected), gradient: true },
-              { label: t.statRemaining, value: formatRM(bill.total_amount - amountCollected), gradient: false },
-            ].map(({ label, value, gradient }, i) => (
-              <motion.div
-                key={label}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.22, delay: i * 0.05, ease: EASE_OUT }}
-              >
-                <NoiseBackground
-                  gradientColors={
-                    gradient
-                      ? ["rgb(167,139,250)", "rgb(216,180,254)", "rgb(139,92,246)"]
-                      : ["rgb(248,113,113)", "rgb(239,68,68)", "rgb(252,165,165)"]
-                  }
-                  className="p-4"
-                >
-                  <p className="font-dm text-xs text-white/35 mb-1">{label}</p>
-                  {gradient ? (
-                    <p
-                      className="font-clash font-bold text-xl"
-                      style={{
-                        background: "linear-gradient(90deg, rgb(160,224,171), rgb(255,172,46))",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text",
-                      }}
-                    >
-                      {value}
-                    </p>
-                  ) : (
-                    <p className="font-clash font-bold text-xl" style={{ color: "rgb(220,90,80)" }}>
-                      {value}
-                    </p>
-                  )}
-                </NoiseBackground>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Progress bar — only animate transform+opacity (GPU) */}
-          <div
-            className="w-full h-1.5 mb-2 overflow-hidden rounded-full"
-            style={{ background: "rgba(255,255,255,0.07)" }}
-          >
+          {/* ── HERO: Sculptural Collected + Animated Donut ── */}
+          <div className="flex items-center gap-5 mb-6">
             <motion.div
-              className="h-full rounded-full"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: progress / 100 }}
-              style={{
-                background: "linear-gradient(90deg, rgb(160,224,171), rgb(255,172,46))",
-                transformOrigin: "left",
-              }}
-              transition={{ duration: 0.6, ease: EASE_OUT }}
-            />
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.6, ease: EASE_OUT }}
+              className="flex-1 min-w-0"
+            >
+              <p
+                className="font-dm uppercase mb-1.5"
+                style={{
+                  fontSize: "9px",
+                  letterSpacing: "0.22em",
+                  color: "rgba(245,240,232,0.45)",
+                }}
+              >
+                {t.statCollected}
+              </p>
+              <CountUpAmount amount={amountCollected} catHex={cat.hex} />
+              <p
+                className="font-dm mt-2"
+                style={{
+                  fontSize: "11px",
+                  color: "rgba(245,240,232,0.45)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {lang === "bm" ? "drpd" : "of"} {formatRM(bill.total_amount)}
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.25, type: "spring", stiffness: 260, damping: 24 }}
+            >
+              <ProgressDonut percent={progress} accent={cat.hex} />
+            </motion.div>
           </div>
-          <p className="font-dm text-[11px] text-white/30 text-center">
+
+          {/* Remaining stat with hairline */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.4, ease: EASE_OUT }}
+            className="flex items-center justify-between py-3"
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <span
+              className="font-dm uppercase"
+              style={{
+                fontSize: "9px",
+                letterSpacing: "0.18em",
+                color: "rgba(245,240,232,0.45)",
+              }}
+            >
+              {t.statRemaining}
+            </span>
+            <span
+              className="font-clash tabular-nums"
+              style={{
+                fontSize: "16px",
+                fontWeight: 500,
+                color: isOverdue ? "#FF6B6B" : "#F5F0E8",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {formatRM(bill.total_amount - amountCollected)}
+            </span>
+          </motion.div>
+
+          <p
+            className="font-dm mt-3 text-center"
+            style={{
+              fontSize: "10px",
+              color: "rgba(245,240,232,0.35)",
+              letterSpacing: "0.04em",
+            }}
+          >
             {t.paidProgress(paidCount, totalCount)}
           </p>
         </div>
@@ -347,15 +429,30 @@ export default function BillDetailClient({
               <motion.div
                 key={member.id}
                 layout
-                /* Emil: stagger 40ms apart, scale(0.95)+opacity entry, ease-out */
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: marking === member.id ? 0.45 : 1, scale: 1 }}
-                transition={{ duration: 0.2, delay: 0.16 + i * 0.04, ease: EASE_OUT }}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-[10px]"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.07)",
+                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  background:
+                    marking === member.id
+                      ? "rgba(160,224,171,0.10)"
+                      : "rgba(255,255,255,0.03)",
+                  borderColor:
+                    marking === member.id
+                      ? "rgba(160,224,171,0.30)"
+                      : "rgba(255,255,255,0.07)",
                 }}
+                transition={{
+                  delay: 0.16 + i * 0.05,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 28,
+                  background: { duration: 0.4, ease: EASE_OUT },
+                  borderColor: { duration: 0.4, ease: EASE_OUT },
+                }}
+                className="relative flex items-center gap-3 px-4 py-3.5 rounded-[12px]"
+                style={{ border: "1px solid rgba(255,255,255,0.07)" }}
               >
                 {/* Avatar */}
                 <div
@@ -473,6 +570,149 @@ export default function BillDetailClient({
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sculptural Collected amount with count-up ──────────────────────────────
+function CountUpAmount({
+  amount,
+  catHex,
+}: {
+  amount: number;
+  catHex: string;
+}) {
+  const motionVal = useMotionValue(0);
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    const controls = animate(motionVal, amount, {
+      duration: 1.0,
+      ease: [0.23, 1, 0.32, 1],
+      onUpdate: (v) => setDisplay(v),
+    });
+    return controls.stop;
+  }, [amount, motionVal]);
+
+  const intPart = Math.floor(display).toLocaleString("en-MY");
+  const decPart = Math.round((display % 1) * 100).toString().padStart(2, "0");
+
+  return (
+    <div className="flex items-baseline" style={{ lineHeight: 0.95 }}>
+      <span
+        className="font-dm uppercase tabular-nums mr-1.5 self-start mt-1.5"
+        style={{
+          fontSize: "10px",
+          letterSpacing: "0.18em",
+          color: "rgba(245,240,232,0.45)",
+        }}
+      >
+        RM
+      </span>
+      <span
+        className="font-clash tabular-nums"
+        style={{
+          fontSize: "clamp(40px, 12vw, 56px)",
+          fontWeight: 500,
+          color: "#F5F0E8",
+          letterSpacing: "-0.035em",
+          textShadow: `0 4px 24px ${catHex}40`,
+        }}
+      >
+        {intPart}
+      </span>
+      <span
+        className="font-clash tabular-nums"
+        style={{
+          fontSize: "clamp(40px, 12vw, 56px)",
+          fontWeight: 500,
+          color: "rgba(245,240,232,0.30)",
+          letterSpacing: "-0.035em",
+        }}
+      >
+        .{decPart}
+      </span>
+    </div>
+  );
+}
+
+// ─── Animated circular progress donut ──────────────────────────────────────
+function ProgressDonut({
+  percent,
+  accent,
+}: {
+  percent: number;
+  accent: string;
+}) {
+  const size = 76;
+  const stroke = 6;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const safePct = Math.max(0, Math.min(100, percent));
+  const motionPct = useMotionValue(0);
+  const [animPct, setAnimPct] = useState(0);
+
+  useEffect(() => {
+    const controls = animate(motionPct, safePct, {
+      duration: 1.1,
+      ease: [0.23, 1, 0.32, 1],
+      delay: 0.3,
+      onUpdate: (v) => setAnimPct(v),
+    });
+    return controls.stop;
+  }, [safePct, motionPct]);
+
+  const dashOffset = circumference - (animPct / 100) * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        {/* Track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={stroke}
+        />
+        {/* Fill — gradient stroke */}
+        <defs>
+          <linearGradient id="donut-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#A0E0AB" />
+            <stop offset="50%" stopColor="#FFAC2E" />
+            <stop offset="100%" stopColor={accent} />
+          </linearGradient>
+        </defs>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="url(#donut-grad)"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          style={{
+            filter: `drop-shadow(0 0 6px ${accent}55)`,
+          }}
+        />
+      </svg>
+      {/* Center percent */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span
+          className="font-clash tabular-nums"
+          style={{
+            fontSize: "16px",
+            fontWeight: 500,
+            color: "#F5F0E8",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {Math.round(animPct)}%
+        </span>
       </div>
     </div>
   );

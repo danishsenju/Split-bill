@@ -29,6 +29,42 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ── Theme-aware tokens (dark default) ─────────────────────────────── */
+  --theme-bg: #000000;
+  --theme-bg-elevated: #0a0a0a;
+  --theme-bg-card: #111111;
+  --theme-text: #F5F0E8;
+  --theme-text-secondary: rgba(245, 240, 232, 0.55);
+  --theme-text-muted: rgba(245, 240, 232, 0.30);
+  --theme-text-faint: rgba(245, 240, 232, 0.18);
+  --theme-border: rgba(255, 255, 255, 0.06);
+  --theme-border-strong: rgba(255, 255, 255, 0.18);
+  --theme-hairline: rgba(255, 255, 255, 0.06);
+  --theme-surface-tint: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="light"] {
+  --theme-bg: #F5F0E8;
+  --theme-bg-elevated: #ffffff;
+  --theme-bg-card: #ffffff;
+  --theme-text: #0a0a0a;
+  --theme-text-secondary: rgba(10, 10, 10, 0.60);
+  --theme-text-muted: rgba(10, 10, 10, 0.38);
+  --theme-text-faint: rgba(10, 10, 10, 0.20);
+  --theme-border: rgba(10, 10, 10, 0.08);
+  --theme-border-strong: rgba(10, 10, 10, 0.22);
+  --theme-hairline: rgba(10, 10, 10, 0.06);
+  --theme-surface-tint: rgba(10, 10, 10, 0.04);
+}
+
+/* Smooth theme transitions on surfaces that opt in via theme-aware vars */
+[data-theme] body,
+[data-theme] .theme-aware {
+  transition:
+    background-color 320ms var(--ease-out),
+    color 320ms var(--ease-out),
+    border-color 320ms var(--ease-out);
 }
 
 * {
@@ -38,12 +74,12 @@
 }
 
 html {
-  background-color: #000000;
+  background-color: var(--theme-bg, #000000);
 }
 
 body {
-  color: #F1F0EB;
-  background-color: #000000;
+  color: var(--theme-text, #F1F0EB);
+  background-color: var(--theme-bg, #000000);
   font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

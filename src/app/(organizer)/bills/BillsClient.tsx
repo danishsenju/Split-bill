@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, ChevronDown } from "lucide-react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  animate,
+} from "framer-motion";
+import { Search, Plus, ChevronDown, X } from "lucide-react";
 import { Bill } from "@/types";
 import { formatRM, getDaysRemaining } from "@/lib/utils";
 import BillCard from "@/components/ui/BillCard";
@@ -61,119 +66,213 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
   return (
     <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "112px" }}>
 
-      {/* ── HEADER + SEARCH ─────────────────────────────────────────────── */}
-      <div className="px-5 pb-5" style={{ paddingTop: "calc(env(safe-area-inset-top) + 28px)" }}>
-        {/* Page title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="font-clash font-bold text-frost mb-5"
-          style={{ fontSize: "28px" }}
-        >
-          {t.pageTitle}
-        </motion.h1>
-
-        {/* Outstanding card */}
+      {/* ══════════════════════════════════════════════════════════════════
+          ATMOSPHERIC HERO — sculptural Outstanding amount
+      ═══════════════════════════════════════════════════════════════════ */}
+      <div
+        className="relative overflow-hidden px-5 pb-7"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 28px)" }}
+      >
+        {/* Atmospheric warm/danger orb — tone shifts when uncollected > 0 */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="relative overflow-hidden rounded-[10px] p-4 mb-4"
+          aria-hidden
+          animate={{ x: ["0%", "8%", "0%"], y: ["0%", "-5%", "0%"] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute pointer-events-none"
           style={{
-            background: "#111111",
-            border: "1px solid rgba(255,255,255,0.08)",
+            top: "-50%",
+            right: "-25%",
+            width: "85%",
+            paddingBottom: "85%",
+            borderRadius: "50%",
+            background:
+              uncollected > 0
+                ? "radial-gradient(circle, rgba(255,107,107,0.18) 0%, transparent 65%)"
+                : "radial-gradient(circle, rgba(160,224,171,0.18) 0%, transparent 65%)",
+            filter: "blur(48px)",
+            transition: "background 800ms cubic-bezier(0.23,1,0.32,1)",
           }}
-        >
-          {/* Subtle orb glow */}
-          <div
-            className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(239,68,68,0.15) 0%, transparent 70%)",
-              filter: "blur(20px)",
-              transform: "translate(20%, -20%)",
-            }}
-          />
-          <div className="relative z-10">
+        />
+        <motion.div
+          aria-hidden
+          animate={{ x: ["0%", "-6%", "0%"], y: ["0%", "4%", "0%"] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute pointer-events-none"
+          style={{
+            top: "30%",
+            left: "-25%",
+            width: "70%",
+            paddingBottom: "70%",
+            borderRadius: "50%",
+            background:
+              uncollected > 0
+                ? "radial-gradient(circle, rgba(165,45,37,0.14) 0%, transparent 60%)"
+                : "radial-gradient(circle, rgba(255,172,46,0.12) 0%, transparent 60%)",
+            filter: "blur(56px)",
+            transition: "background 800ms cubic-bezier(0.23,1,0.32,1)",
+          }}
+        />
+
+        <div className="relative z-10">
+          {/* Editorial kicker */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+          >
             <p
-              className="font-dm text-whisper uppercase mb-1"
-              style={{ fontSize: "10px", letterSpacing: "0.1em" }}
+              className="font-dm uppercase mb-3"
+              style={{
+                fontSize: "10px",
+                letterSpacing: "0.22em",
+                color: "rgba(245,240,232,0.55)",
+                textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+              }}
             >
               {t.outstanding}
             </p>
-            <p
-              className="font-clash font-bold leading-none"
-              style={{ fontSize: "32px", color: uncollected > 0 ? "#ef4444" : "#22c55e" }}
-            >
-              {formatRM(uncollected)}
-            </p>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Search input */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          className="relative"
-        >
-          <Search
-            size={15}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: "#6d6d6d" }}
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t.searchPlaceholder}
-            className="w-full font-dm text-sm placeholder:text-whisper scrollbar-hide"
-            style={{
-              background: "#111111",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "75.024px",
-              padding: "10px 16px 10px 36px",
-              color: "#ffffff",
-              outline: "none",
-              transition: "border-color 150ms cubic-bezier(0.23, 1, 0.32, 1)",
-            }}
-            onFocus={(e) =>
-              (e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)")
-            }
-            onBlur={(e) =>
-              (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")
-            }
-          />
-        </motion.div>
+          {/* Sculptural amount — animated count-up */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <SculpturalAmount
+              amount={uncollected}
+              isAlert={uncollected > 0}
+            />
+            <p
+              className="font-dm mt-4"
+              style={{
+                fontSize: "12px",
+                color: "rgba(245,240,232,0.55)",
+                letterSpacing: "0.02em",
+                textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+              }}
+            >
+              {bills.filter((b) => b.status !== "completed").length} bil aktif
+            </p>
+          </motion.div>
+
+          {/* Search input — editorial pill */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            className="relative mt-7"
+          >
+            <Search
+              size={14}
+              className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: "rgba(245,240,232,0.4)" }}
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t.searchPlaceholder}
+              className="w-full font-dm text-sm scrollbar-hide"
+              style={{
+                background: "rgba(245,240,232,0.04)",
+                border: "1px solid rgba(245,240,232,0.10)",
+                borderRadius: "99px",
+                padding: "11px 40px 11px 38px",
+                color: "#F5F0E8",
+                outline: "none",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+                transition: "border-color 220ms cubic-bezier(0.23,1,0.32,1), background 220ms",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "rgba(245,240,232,0.35)";
+                e.currentTarget.style.background = "rgba(245,240,232,0.06)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "rgba(245,240,232,0.10)";
+                e.currentTarget.style.background = "rgba(245,240,232,0.04)";
+              }}
+            />
+            <AnimatePresence>
+              {search.length > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 active:scale-90"
+                  style={{
+                    background: "rgba(245,240,232,0.08)",
+                    border: "none",
+                    borderRadius: "99px",
+                    width: 22,
+                    height: 22,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "rgba(245,240,232,0.6)",
+                    transition: "transform 160ms",
+                  }}
+                  aria-label="Clear search"
+                >
+                  <X size={12} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
       </div>
 
-      {/* ── FILTER PILLS ─────────────────────────────────────────────────── */}
+      {/* ── FILTER PILLS — morphing layoutId ─────────────────────────── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.15 }}
-        className="flex gap-2 px-5 overflow-x-auto scrollbar-hide pb-1 mb-5"
+        transition={{ delay: 0.28, duration: 0.4 }}
+        className="flex gap-1 px-5 overflow-x-auto scrollbar-hide pb-1 mb-6"
       >
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className="whitespace-nowrap font-dm text-xs active:scale-[0.95]"
-            style={{
-              padding: "6px 16px",
-              borderRadius: "75.024px",
-              border: filter === f.key
-                ? "1px solid rgba(255,255,255,0.3)"
-                : "1px solid transparent",
-              color: filter === f.key ? "#ffffff" : "#6d6d6d",
-              background: "transparent",
-              transition:
-                "color 150ms cubic-bezier(0.23, 1, 0.32, 1), border-color 150ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms",
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          return (
+            <motion.button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              whileTap={{ scale: 0.94 }}
+              className="relative whitespace-nowrap font-dm shrink-0"
+              style={{
+                padding: "8px 18px",
+                fontSize: "12px",
+                color: active ? "#000000" : "rgba(245,240,232,0.55)",
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                cursor: "pointer",
+                transition: "color 280ms cubic-bezier(0.23,1,0.32,1)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              {/* Morphing pill background — slides between filters */}
+              {active && (
+                <motion.span
+                  layoutId="bills-filter-pill"
+                  className="absolute inset-0"
+                  style={{
+                    background: "#F5F0E8",
+                    borderRadius: "99px",
+                    boxShadow: "0 4px 16px rgba(245,240,232,0.18)",
+                    zIndex: 0,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 420,
+                    damping: 32,
+                  }}
+                />
+              )}
+              <span className="relative z-10">{f.label}</span>
+            </motion.button>
+          );
+        })}
       </motion.div>
 
       {/* ── BILL GROUPS ──────────────────────────────────────────────────── */}
@@ -196,14 +295,25 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
             {/* Overdue group */}
             {overdueGroup.length > 0 && (
               <div>
-                <SectionLabel emoji="⚠" label={t.groupOverdue} count={overdueGroup.length} color="#ef4444" />
+                <SectionLabel
+                  index="01"
+                  label={t.groupOverdue}
+                  count={overdueGroup.length}
+                  color="#FF6B6B"
+                  dotColor="#FF6B6B"
+                />
                 <div className="flex flex-col gap-3">
                   {overdueGroup.map((bill, i) => (
                     <motion.div
                       key={bill.id}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04, ease: [0.23, 1, 0.32, 1] }}
+                      transition={{
+                        delay: i * 0.06,
+                        type: "spring",
+                        stiffness: 280,
+                        damping: 30,
+                      }}
                     >
                       <BillCard bill={bill} />
                     </motion.div>
@@ -215,14 +325,25 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
             {/* Active group */}
             {activeGroup.length > 0 && (
               <div>
-                <SectionLabel emoji="●" label={t.groupActive} count={activeGroup.length} />
+                <SectionLabel
+                  index={overdueGroup.length > 0 ? "02" : "01"}
+                  label={t.groupActive}
+                  count={activeGroup.length}
+                  color="#F5F0E8"
+                  dotColor="#A0E0AB"
+                />
                 <div className="flex flex-col gap-3">
                   {activeGroup.map((bill, i) => (
                     <motion.div
                       key={bill.id}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04, ease: [0.23, 1, 0.32, 1] }}
+                      transition={{
+                        delay: i * 0.06,
+                        type: "spring",
+                        stiffness: 280,
+                        damping: 30,
+                      }}
                     >
                       <BillCard bill={bill} />
                     </motion.div>
@@ -294,61 +415,187 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
         )}
       </div>
 
-      {/* ── FAB ──────────────────────────────────────────────────────────── */}
-      <Link
-        href="/create"
-        className="fixed bottom-24 right-4 z-40 md:hidden flex items-center justify-center active:scale-[0.93]"
-        style={{
-          width: "52px",
-          height: "52px",
-          borderRadius: "75.024px",
-          background: "var(--gradient-deep-ocean)",
-          transition: "transform 160ms cubic-bezier(0.23, 1, 0.32, 1)",
-        }}
+      {/* ── FAB — editorial, atmospheric ──────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 0.5, type: "spring", stiffness: 280, damping: 22 }}
+        whileTap={{ scale: 0.93 }}
+        whileHover={{ y: -2 }}
+        className="fixed bottom-24 right-4 z-40 md:hidden"
       >
-        <Plus size={22} color="#000000" strokeWidth={2.5} />
-      </Link>
+        <Link
+          href="/create"
+          className="relative flex items-center justify-center"
+          style={{
+            width: "54px",
+            height: "54px",
+            borderRadius: "99px",
+            background: "#F5F0E8",
+            color: "#000000",
+            boxShadow:
+              "0 4px 20px rgba(245,240,232,0.18), 0 0 0 1px rgba(245,240,232,0.08)",
+            transition: "box-shadow 220ms cubic-bezier(0.23,1,0.32,1)",
+          }}
+        >
+          {/* Atmospheric ring pulse */}
+          <motion.span
+            aria-hidden
+            animate={{ scale: [1, 1.35], opacity: [0.6, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              borderRadius: "99px",
+              border: "1px solid rgba(245,240,232,0.5)",
+            }}
+          />
+          <Plus size={22} strokeWidth={2} />
+        </Link>
+      </motion.div>
     </div>
   );
 }
 
-// ─── Section label helper ──────────────────────────────────────────────────
+// ─── Editorial section label — kicker + title + count ────────────────────
 function SectionLabel({
-  emoji,
+  index,
   label,
   count,
-  color = "#6d6d6d",
+  color = "rgba(245,240,232,0.55)",
+  dotColor,
 }: {
-  emoji: string;
+  index: string;
   label: string;
   count: number;
   color?: string;
+  dotColor?: string;
 }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <span style={{ fontSize: "12px", color }}>{emoji}</span>
+    <div className="flex items-baseline gap-3 mb-4">
       <span
-        className="font-dm uppercase"
-        style={{ fontSize: "11px", letterSpacing: "0.08em", color }}
-      >
-        {label}
-      </span>
-      <span
-        className="font-dm"
+        className="font-dm tabular-nums"
         style={{
-          fontSize: "11px",
-          color: "#6d6d6d",
-          background: "rgba(255,255,255,0.06)",
-          borderRadius: "99px",
-          padding: "1px 7px",
+          fontSize: "10px",
+          letterSpacing: "0.18em",
+          color: "rgba(245,240,232,0.35)",
         }}
       >
-        {count}
+        {index}
+      </span>
+      <div className="flex items-center gap-2">
+        {dotColor && (
+          <motion.span
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              background: dotColor,
+              boxShadow: `0 0 6px ${dotColor}80`,
+              display: "inline-block",
+            }}
+          />
+        )}
+        <span
+          className="font-clash"
+          style={{
+            fontSize: "13px",
+            fontWeight: 500,
+            color,
+            letterSpacing: "0.01em",
+          }}
+        >
+          {label}
+        </span>
+      </div>
+      <span
+        className="font-dm tabular-nums"
+        style={{
+          fontSize: "10px",
+          color: "rgba(245,240,232,0.35)",
+        }}
+      >
+        ({count})
       </span>
       <div
         className="flex-1"
-        style={{ height: "1px", background: "rgba(255,255,255,0.06)" }}
+        style={{
+          height: "1px",
+          background:
+            "linear-gradient(to right, rgba(245,240,232,0.10), transparent)",
+        }}
       />
+    </div>
+  );
+}
+
+// ─── Sculptural amount with animated count-up ──────────────────────────────
+function SculpturalAmount({
+  amount,
+  isAlert,
+}: {
+  amount: number;
+  isAlert: boolean;
+}) {
+  const motionVal = useMotionValue(0);
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    const controls = animate(motionVal, amount, {
+      duration: 1.0,
+      ease: [0.23, 1, 0.32, 1],
+      onUpdate: (v) => setDisplay(v),
+    });
+    return controls.stop;
+  }, [amount, motionVal]);
+
+  const intPart = Math.floor(display).toLocaleString("en-MY");
+  const decPart = Math.round((display % 1) * 100).toString().padStart(2, "0");
+
+  return (
+    <div>
+      <p
+        className="font-dm uppercase"
+        style={{
+          fontSize: "10px",
+          letterSpacing: "0.20em",
+          color: "rgba(245,240,232,0.5)",
+          marginBottom: "6px",
+          textShadow: "0 1px 8px rgba(0,0,0,0.5)",
+        }}
+      >
+        RM
+      </p>
+      <div className="flex items-baseline" style={{ lineHeight: 0.95 }}>
+        <span
+          className="font-clash tabular-nums"
+          style={{
+            fontSize: "clamp(54px, 18vw, 80px)",
+            fontWeight: 500,
+            color: isAlert ? "#FF6B6B" : "#A0E0AB",
+            letterSpacing: "-0.04em",
+            textShadow: isAlert
+              ? "0 4px 28px rgba(255,107,107,0.35)"
+              : "0 4px 28px rgba(160,224,171,0.30)",
+          }}
+        >
+          {intPart}
+        </span>
+        <span
+          className="font-clash tabular-nums"
+          style={{
+            fontSize: "clamp(54px, 18vw, 80px)",
+            fontWeight: 500,
+            color: isAlert
+              ? "rgba(255,107,107,0.32)"
+              : "rgba(160,224,171,0.32)",
+            letterSpacing: "-0.04em",
+          }}
+        >
+          .{decPart}
+        </span>
+      </div>
     </div>
   );
 }

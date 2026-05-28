@@ -7,13 +7,9 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import Silk from "@/components/ui/Silk";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE_OUT } },
-};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,7 +25,10 @@ export default function LoginPage() {
     setError("");
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (authError) {
       setError("Email atau kata laluan salah. Cuba lagi.");
@@ -42,178 +41,273 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-midnight relative overflow-hidden flex items-center justify-center px-5 py-12">
-      {/* Atmospheric orbs — depth without shadows */}
+    <div className="relative min-h-dvh overflow-hidden" style={{ background: "#000" }}>
+      {/* ── SILK BACKGROUND ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden>
+        <Silk
+          speed={5}
+          scale={1}
+          color="#270d90"
+          noiseIntensity={1.5}
+          rotation={4.18}
+        />
+      </div>
+
+      {/* ── DEEPEN: vignette overlay so text floats above silk ── */}
       <div
-        className="absolute top-[-15%] left-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none orb-animate"
-        style={{ background: "rgb(160, 224, 171)", opacity: 0.16, filter: "blur(130px)" }}
-      />
-      <div
-        className="absolute bottom-[-20%] right-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none orb-animate-slow"
-        style={{ background: "rgb(255, 140, 40)", opacity: 0.13, filter: "blur(130px)" }}
-      />
-      <div
-        className="absolute top-[45%] right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none"
-        style={{ background: "rgb(165, 45, 37)", opacity: 0.09, filter: "blur(100px)" }}
+        aria-hidden
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 50%, transparent 0%, rgba(0,0,0,0.45) 70%, rgba(0,0,0,0.78) 100%)",
+        }}
       />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: EASE_OUT }}
-        className="w-full max-w-sm relative z-10"
-      >
-        {/* Logo */}
+      {/* ── CONTENT ── */}
+      <div className="relative z-10 min-h-dvh flex flex-col px-6">
+        {/* Top region — logo */}
         <motion.div
-          className="mb-10 text-center"
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.05 }}
+          transition={{ duration: 0.6, ease: EASE_OUT }}
+          style={{ paddingTop: "calc(env(safe-area-inset-top) + 56px)" }}
         >
-          <h1 className="text-4xl font-bold tracking-tight mb-2">
-            <span
-              style={{
-                background: "var(--gradient-deep-ocean)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              kolekduit
-            </span>
+          <p
+            className="font-dm uppercase"
+            style={{
+              fontSize: "10px",
+              letterSpacing: "0.22em",
+              color: "rgba(245,240,232,0.55)",
+              textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+            }}
+          >
+            kolekduit
+          </p>
+          <h1
+            className="font-clash mt-3"
+            style={{
+              fontSize: "44px",
+              fontWeight: 500,
+              color: "#F5F0E8",
+              letterSpacing: "-0.03em",
+              lineHeight: 1.02,
+              textShadow: "0 2px 24px rgba(0,0,0,0.5)",
+            }}
+          >
+            Selamat
+            <br />
+            kembali.
           </h1>
-          <p className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>
+          <p
+            className="font-dm mt-4"
+            style={{
+              fontSize: "13px",
+              color: "rgba(245,240,232,0.55)",
+              lineHeight: 1.55,
+              textShadow: "0 1px 8px rgba(0,0,0,0.5)",
+              maxWidth: "280px",
+            }}
+          >
             Settle hutang, tanpa drama.
           </p>
         </motion.div>
 
-        {/* Glass card */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT, delay: 0.1 }}
-          className="rounded-[10px] p-7"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            backdropFilter: "blur(24px)",
+        {/* Middle region — form (pushed to bottom of screen) */}
+        <motion.form
+          onSubmit={handleLogin}
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.08, delayChildren: 0.25 } },
           }}
+          className="mt-auto pb-12 pt-16 flex flex-col gap-7"
         >
-          <h2 className="text-frost text-lg font-semibold mb-6">Log Masuk</h2>
+          {/* Email field */}
+          <EditorialField
+            label="Email"
+            inputProps={{
+              type: "email",
+              value: email,
+              onChange: (e) => setEmail(e.target.value),
+              placeholder: "nama@email.com",
+              required: true,
+              autoComplete: "email",
+            }}
+          />
 
-          <motion.form
-            onSubmit={handleLogin}
-            className="flex flex-col gap-4"
-            initial="hidden"
-            animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } } }}
-          >
-            <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Email</label>
-              <InputField
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
-                required
-              />
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>Kata Laluan</label>
-              <div className="relative">
-                <InputField
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  extraPaddingRight
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-90"
-                  style={{ color: "#fff", transition: "opacity 150ms var(--ease-out)" }}
-                >
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </motion.div>
-
-            {error && (
-              <motion.p
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2, ease: EASE_OUT }}
-                className="text-sm px-3 py-2 rounded-[10px]"
+          {/* Password field */}
+          <EditorialField
+            label="Kata laluan"
+            rightSlot={
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="active:opacity-50"
                 style={{
-                  color: "#FF6B6B",
-                  background: "rgba(255,107,107,0.1)",
-                  border: "1px solid rgba(255,107,107,0.2)",
+                  color: "rgba(245,240,232,0.55)",
+                  transition: "opacity 160ms cubic-bezier(0.23,1,0.32,1)",
                 }}
+                aria-label={showPw ? "Sembunyi kata laluan" : "Tunjuk kata laluan"}
               >
-                {error}
-              </motion.p>
-            )}
+                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            }
+            inputProps={{
+              type: showPw ? "text" : "password",
+              value: password,
+              onChange: (e) => setPassword(e.target.value),
+              placeholder: "••••••••",
+              required: true,
+              autoComplete: "current-password",
+            }}
+          />
 
-            <motion.div variants={itemVariants} className="mt-1">
-              <PrimaryButton type="submit" disabled={loading}>
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                Log Masuk
-              </PrimaryButton>
-            </motion.div>
-          </motion.form>
-        </motion.div>
+          {/* Error */}
+          {error && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: EASE_OUT }}
+              className="font-dm"
+              style={{
+                fontSize: "12px",
+                color: "rgb(255,107,107)",
+                letterSpacing: "0.02em",
+                textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+              }}
+            >
+              {error}
+            </motion.p>
+          )}
 
-        <p className="text-center text-sm mt-5" style={{ color: "var(--color-whisper-gray)" }}>
-          Belum ada akaun?{" "}
-          <Link
-            href="/auth/register"
-            className="text-frost underline-offset-2 hover:underline"
-            style={{ transition: "opacity 150ms" }}
+          {/* CTA */}
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 8 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } },
+            }}
+            className="mt-2"
           >
-            Daftar di sini
-          </Link>
-        </p>
-      </motion.div>
+            <PrimaryButton type="submit" disabled={loading}>
+              {loading && <Loader2 size={15} className="animate-spin" />}
+              Log Masuk
+            </PrimaryButton>
+          </motion.div>
+
+          {/* Register link */}
+          <motion.p
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { duration: 0.4, ease: EASE_OUT } },
+            }}
+            className="font-dm text-center mt-1"
+            style={{
+              fontSize: "12px",
+              color: "rgba(245,240,232,0.45)",
+              letterSpacing: "0.02em",
+              textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+            }}
+          >
+            Belum ada akaun?{" "}
+            <Link
+              href="/auth/register"
+              className="active:opacity-60"
+              style={{
+                color: "#F5F0E8",
+                textDecoration: "underline",
+                textDecorationColor: "rgba(245,240,232,0.3)",
+                textUnderlineOffset: "3px",
+                transition: "opacity 160ms cubic-bezier(0.23,1,0.32,1)",
+              }}
+            >
+              Daftar
+            </Link>
+          </motion.p>
+        </motion.form>
+      </div>
     </div>
   );
 }
 
-function InputField({
-  type,
-  value,
-  onChange,
-  placeholder,
-  required,
-  extraPaddingRight,
+// ─── Editorial input field — bottom border only, label above ──────────────
+function EditorialField({
+  label,
+  inputProps,
+  rightSlot,
 }: {
-  type: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder: string;
-  required?: boolean;
-  extraPaddingRight?: boolean;
+  label: string;
+  inputProps: React.InputHTMLAttributes<HTMLInputElement>;
+  rightSlot?: React.ReactNode;
 }) {
+  const [focused, setFocused] = useState(false);
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      required={required}
-      className={`w-full rounded-[10px] px-4 py-3 text-frost text-sm ${extraPaddingRight ? "pr-12" : ""}`}
-      style={{
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        outline: "none",
-        color: "#ffffff",
-        caretColor: "var(--gradient-deep-ocean, #a0e0ab)",
-        transition: "border-color 150ms var(--ease-out)",
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 8 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } },
       }}
-      onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
-      onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
-    />
+      className="relative"
+    >
+      <label
+        className="font-dm uppercase block"
+        style={{
+          fontSize: "10px",
+          letterSpacing: "0.16em",
+          color: focused
+            ? "#F5F0E8"
+            : "rgba(245,240,232,0.55)",
+          marginBottom: "8px",
+          textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+          transition: "color 200ms cubic-bezier(0.23,1,0.32,1)",
+        }}
+      >
+        {label}
+      </label>
+      <div className="flex items-end gap-2">
+        <input
+          {...inputProps}
+          onFocus={(e) => {
+            setFocused(true);
+            inputProps.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            inputProps.onBlur?.(e);
+          }}
+          className="flex-1 font-dm bg-transparent outline-none"
+          style={{
+            fontSize: "16px",
+            color: "#F5F0E8",
+            padding: "0 0 8px 0",
+            letterSpacing: "-0.005em",
+            caretColor: "#F5F0E8",
+            textShadow: "0 1px 8px rgba(0,0,0,0.4)",
+            ...inputProps.style,
+          }}
+        />
+        {rightSlot && <div className="pb-2">{rightSlot}</div>}
+      </div>
+      {/* Animated underline */}
+      <div
+        style={{
+          height: "1px",
+          background: "rgba(245,240,232,0.18)",
+          position: "relative",
+        }}
+      >
+        <motion.div
+          animate={{ scaleX: focused ? 1 : 0 }}
+          transition={{ duration: 0.4, ease: EASE_OUT }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "#F5F0E8",
+            transformOrigin: "left",
+            boxShadow: "0 0 8px rgba(245,240,232,0.4)",
+          }}
+        />
+      </div>
+    </motion.div>
   );
 }

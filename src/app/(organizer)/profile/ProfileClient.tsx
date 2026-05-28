@@ -14,13 +14,16 @@ import {
   CreditCard,
   QrCode,
   Users,
+  Palette,
 } from "lucide-react";
 import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { getInitial, maskAccount, formatRM } from "@/lib/utils";
 import Aurora from "@/components/ui/Aurora";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useLang, profileT } from "@/lib/language-context";
+import { useTheme } from "@/lib/theme-context";
 
 interface Props {
   profile: Profile | null;
@@ -44,17 +47,30 @@ function SettingRow({
 }) {
   return (
     <div
-      className="flex items-center gap-3 px-4 py-4"
+      className="theme-aware flex items-center gap-3 px-4 py-4"
       style={{
-        borderBottom: border ? "1px solid rgba(255,255,255,0.05)" : "none",
+        borderBottom: border ? "1px solid var(--theme-border)" : "none",
       }}
     >
-      <div style={{ color: "#6d6d6d", flexShrink: 0 }}>{icon}</div>
+      <div
+        style={{
+          color: "var(--theme-text-muted)",
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </div>
       <div className="flex-1 min-w-0">
-        <p className="font-dm text-frost" style={{ fontSize: "14px" }}>
+        <p
+          className="font-dm theme-aware"
+          style={{ fontSize: "14px", color: "var(--theme-text)" }}
+        >
           {label}
         </p>
-        <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>
+        <p
+          className="font-dm theme-aware"
+          style={{ fontSize: "12px", color: "var(--theme-text-secondary)" }}
+        >
           {sublabel}
         </p>
       </div>
@@ -67,6 +83,7 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
   const router = useRouter();
   const { lang, setLang } = useLang();
   const t = profileT[lang];
+  const { theme } = useTheme();
   const [loggingOut, setLoggingOut] = useState(false);
   const [reminderDays, setReminderDays] = useState(3);
   const [waNotif, setWaNotif] = useState(true);
@@ -83,7 +100,14 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
   const initial = getInitial(name);
 
   return (
-    <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "112px" }}>
+    <div
+      className="theme-aware"
+      style={{
+        background: "var(--theme-bg)",
+        minHeight: "100dvh",
+        paddingBottom: "112px",
+      }}
+    >
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <motion.div
@@ -194,9 +218,10 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
           </SectionLabel>
 
           <div
+            className="theme-aware"
             style={{
-              background: "#111111",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--theme-bg-card)",
+              border: "1px solid var(--theme-border)",
               borderRadius: "10px",
               overflow: "hidden",
             }}
@@ -294,13 +319,24 @@ export default function ProfileClient({ profile, billCount, totalCollected }: Pr
           <SectionLabel label={t.sectionSettings} />
 
           <div
+            className="theme-aware"
             style={{
-              background: "#111111",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--theme-bg-card)",
+              border: "1px solid var(--theme-border)",
               borderRadius: "10px",
               overflow: "hidden",
             }}
           >
+            {/* Theme — light/dark toggle */}
+            <SettingRow
+              icon={<Palette size={16} />}
+              label={t.themeLabel}
+              sublabel={
+                theme === "light" ? t.themeSubLight : t.themeSubDark
+              }
+              right={<ThemeToggle />}
+            />
+
             {/* Reminder days */}
             <SettingRow
               icon={<Bell size={16} />}
@@ -474,8 +510,12 @@ function SectionLabel({
   return (
     <div className="flex items-center justify-between mb-3">
       <span
-        className="font-dm uppercase"
-        style={{ fontSize: "10px", letterSpacing: "0.10em", color: "#6d6d6d" }}
+        className="font-dm uppercase theme-aware"
+        style={{
+          fontSize: "10px",
+          letterSpacing: "0.10em",
+          color: "var(--theme-text-secondary)",
+        }}
       >
         {label}
       </span>

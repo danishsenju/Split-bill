@@ -46,3 +46,25 @@ export function formatTime(dateString: string): string {
 export function cn(...classes: (string | undefined | false | null)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+// ─── Category atmospheric color palette ───────────────────────────────────
+// Used for tinted glow/halo on bill cards and detail hero.
+// Tones are muted (monopo-aligned) — never harsh saturation.
+export interface CategoryTone {
+  /** Full RGB triplet, e.g. "165,45,37" — for use in rgba() */
+  rgb: string;
+  /** Solid hex for accent text/dot */
+  hex: string;
+}
+
+export function categoryTone(category: string): CategoryTone {
+  const key = category.toLowerCase();
+  if (key.includes("makan")) return { rgb: "165,45,37", hex: "#A52D25" };       // brick red
+  if (key.includes("hiburan")) return { rgb: "157,123,184", hex: "#9D7BB8" };   // dusty lavender
+  if (key.includes("trip")) return { rgb: "91,138,184", hex: "#5B8AB8" };       // atmospheric blue
+  if (key.includes("rumah")) return { rgb: "245,240,232", hex: "#F5F0E8" };     // frost white
+  if (key.includes("kesihatan")) return { rgb: "212,157,176", hex: "#D49DB0" }; // powder rose
+  if (key.includes("belajar")) return { rgb: "160,224,171", hex: "#A0E0AB" };   // sage green
+  if (key.includes("beli")) return { rgb: "255,172,46", hex: "#FFAC2E" };       // warm amber
+  return { rgb: "139,158,136", hex: "#8B9E88" };                                 // whisper sage (others)
+}

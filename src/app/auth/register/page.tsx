@@ -8,6 +8,7 @@ import { Eye, EyeOff, Loader2, Upload, ChevronDown, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PaymentMethod } from "@/types";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import Silk from "@/components/ui/Silk";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
@@ -152,50 +153,115 @@ function RegisterForm() {
   }
 
   return (
-    <div className="min-h-dvh bg-midnight relative overflow-hidden flex items-center justify-center px-5 py-12">
-      {/* Atmospheric orbs */}
-      <div className="absolute top-[-15%] left-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: "rgb(160, 224, 171)", opacity: 0.16, filter: "blur(130px)" }} />
-      <div className="absolute bottom-[-20%] right-[-8%] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: "rgb(255, 140, 40)", opacity: 0.13, filter: "blur(130px)" }} />
-      <div className="absolute top-[40%] right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: "rgb(165, 45, 37)", opacity: 0.09, filter: "blur(100px)" }} />
+    <div className="relative min-h-dvh overflow-hidden" style={{ background: "#000" }}>
+      {/* ── SILK BACKGROUND ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden>
+        <Silk
+          speed={5}
+          scale={1}
+          color="#270d90"
+          noiseIntensity={1.5}
+          rotation={4.18}
+        />
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: EASE_OUT }}
-        className="w-full max-w-sm relative z-10"
-      >
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold tracking-tight mb-2">
-            <span style={{ background: "var(--gradient-deep-ocean)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+      {/* ── Vignette overlay for legibility ── */}
+      <div
+        aria-hidden
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 50%, transparent 0%, rgba(0,0,0,0.45) 70%, rgba(0,0,0,0.78) 100%)",
+        }}
+      />
+
+      <div className="relative z-10 min-h-dvh flex items-center justify-center px-5 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: EASE_OUT }}
+          className="w-full max-w-sm"
+        >
+          {/* Logo — editorial */}
+          <div className="mb-10">
+            <p
+              className="font-dm uppercase"
+              style={{
+                fontSize: "10px",
+                letterSpacing: "0.22em",
+                color: "rgba(245,240,232,0.55)",
+                textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+              }}
+            >
               kolekduit
-            </span>
-          </h1>
-          <p className="text-sm" style={{ color: "var(--color-whisper-gray)" }}>
-            {prefillFromBill ? "Daftar untuk tracking hutang anda" : "Daftar akaun baru"}
-          </p>
-        </div>
+            </p>
+            <h1
+              className="font-clash mt-3"
+              style={{
+                fontSize: "32px",
+                fontWeight: 500,
+                color: "#F5F0E8",
+                letterSpacing: "-0.03em",
+                lineHeight: 1.05,
+                textShadow: "0 2px 20px rgba(0,0,0,0.5)",
+              }}
+            >
+              {prefillFromBill ? "Sertai untuk track hutang anda." : "Mulakan tanpa drama."}
+            </h1>
+          </div>
 
         {/* Step progress */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>
+        <div className="mb-7">
+          <div className="flex items-center justify-between mb-2.5">
+            <span
+              className="font-dm uppercase"
+              style={{
+                fontSize: "10px",
+                letterSpacing: "0.16em",
+                color: "rgba(245,240,232,0.55)",
+                textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+              }}
+            >
               {step === 1 ? "Maklumat Diri" : "Kaedah Pembayaran"}
             </span>
-            <span className="text-xs" style={{ color: "var(--color-whisper-gray)" }}>{step}/2</span>
+            <span
+              className="font-dm uppercase"
+              style={{
+                fontSize: "10px",
+                letterSpacing: "0.16em",
+                color: "rgba(245,240,232,0.45)",
+                textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+              }}
+            >
+              {step} / 2
+            </span>
           </div>
-          <div className="h-[2px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+          <div
+            className="overflow-hidden rounded-full"
+            style={{ height: "1px", background: "rgba(245,240,232,0.15)" }}
+          >
             <motion.div
               className="h-full rounded-full"
               animate={{ width: step === 1 ? "50%" : "100%" }}
-              transition={{ duration: 0.4, ease: EASE_OUT }}
-              style={{ background: "var(--gradient-deep-ocean)" }}
+              transition={{ duration: 0.5, ease: EASE_OUT }}
+              style={{
+                background: "#F5F0E8",
+                boxShadow: "0 0 8px rgba(245,240,232,0.5)",
+              }}
             />
           </div>
         </div>
 
-        {/* Glass card */}
-        <div className="rounded-[10px] p-7" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(24px)" }}>
+        {/* Form container — minimal glass to let Silk bleed through */}
+        <div
+          className="rounded-[14px] p-6"
+          style={{
+            background: "rgba(0,0,0,0.32)",
+            border: "1px solid rgba(245,240,232,0.08)",
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+          }}
+        >
           <form onSubmit={handleRegister}>
             <AnimatePresence mode="wait">
               {step === 1 && (
@@ -472,7 +538,8 @@ function RegisterForm() {
             Log masuk
           </Link>
         </p>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -496,10 +563,18 @@ function RegInput({
       placeholder={placeholder}
       required={required}
       minLength={minLength}
-      className={`w-full rounded-[10px] px-4 py-3 text-sm ${extraPaddingRight ? "pr-12" : ""}`}
-      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", outline: "none", color: "#ffffff", transition: "border-color 150ms var(--ease-out)" }}
-      onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
-      onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+      className={`w-full font-dm bg-transparent outline-none ${extraPaddingRight ? "pr-10" : ""}`}
+      style={{
+        fontSize: "15px",
+        color: "#F5F0E8",
+        padding: "10px 0 10px 0",
+        borderBottom: "1px solid rgba(245,240,232,0.18)",
+        caretColor: "#F5F0E8",
+        letterSpacing: "-0.005em",
+        transition: "border-color 200ms cubic-bezier(0.23,1,0.32,1)",
+      }}
+      onFocus={(e) => { e.currentTarget.style.borderBottomColor = "#F5F0E8"; }}
+      onBlur={(e) => { e.currentTarget.style.borderBottomColor = "rgba(245,240,232,0.18)"; }}
     />
   );
 }

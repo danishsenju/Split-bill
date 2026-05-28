@@ -3,17 +3,16 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Users, Search, X, MessageCircle } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Users, Search, X, MessageCircle, Copy } from "lucide-react";
 import { ScanResult, WATone } from "@/types";
 import { generatePayCode } from "@/lib/paycode";
 import { formatRM } from "@/lib/utils";
 import { buildWAMessage, buildWAUrl } from "@/lib/whatsapp";
-import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import ReceiptScanner from "@/components/receipt/ReceiptScanner";
 import ReceiptEditList from "@/components/receipt/ReceiptEditList";
 import WAToneSelector from "@/components/organizer/WAToneSelector";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import Link from "next/link";
+import Confetti from "@/components/ui/Confetti";
 import { useLang, createT } from "@/lib/language-context";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -222,6 +221,42 @@ function FieldLabel({ children, optional, optionalText = "(pilihan)" }: { childr
   );
 }
 
+// ─── Inline copy button for the cinematic pay code ───────────────────────
+function PayCodeCopyButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <motion.button
+      onClick={handleCopy}
+      whileTap={{ scale: 0.94 }}
+      className="flex items-center gap-1.5 active:opacity-70"
+      style={{
+        background: copied ? "rgba(34,197,94,0.10)" : "rgba(245,240,232,0.04)",
+        border: `1px solid ${
+          copied ? "rgba(34,197,94,0.30)" : "rgba(245,240,232,0.10)"
+        }`,
+        borderRadius: "99px",
+        padding: "6px 12px",
+        color: copied ? "#22c55e" : "rgba(245,240,232,0.7)",
+        fontSize: "11px",
+        transition:
+          "background 220ms cubic-bezier(0.23,1,0.32,1), border-color 220ms cubic-bezier(0.23,1,0.32,1), color 220ms",
+      }}
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+      <span className="font-dm" style={{ letterSpacing: "0.02em" }}>
+        {copied ? "Disalin" : "Salin"}
+      </span>
+    </motion.button>
+  );
+}
+
 function ErrorBox({ errors }: { errors: string[] }) {
   return (
     <div
@@ -377,43 +412,124 @@ export default function CreateBillClient() {
   return (
     <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "96px" }}>
 
-      {/* ── STICKY HEADER ───────────────────────────────────────────────── */}
+      {/* ── STICKY HEADER with atmospheric backdrop ───────────────────── */}
       <header
-        className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4 md:top-[60px]"
-        style={{
-          background: "rgba(0,0,0,0.92)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
+        className="sticky top-0 z-20 md:top-[60px] overflow-hidden"
       >
-        {step < 3 && (
-          <button
-            onClick={() => { setErrors([]); if (step === 2) { setStep(1); } else { router.back(); } }}
-            className="active:scale-[0.88] shrink-0"
-            style={{ color: "#6d6d6d", transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)" }}
-          >
-            <ArrowLeft size={22} />
-          </button>
-        )}
-        <h1 className="font-clash font-bold text-frost flex-1 leading-none" style={{ fontSize: "18px" }}>
-          {step === 1 ? t.step1Title : step === 2 ? t.step2Title : t.step3Title}
-        </h1>
-        {step < 3 && (
-          <span className="font-dm text-whisper shrink-0" style={{ fontSize: "12px" }}>{t.stepIndicator(step)}</span>
-        )}
-      </header>
-
-      {/* ── GRADIENT STEP PROGRESS ──────────────────────────────────────── */}
-      {step < 3 && (
-        <div style={{ height: "2px", background: "rgba(255,255,255,0.06)" }}>
+        {/* Atmospheric orbs in header */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
           <motion.div
-            style={{ height: "100%", background: "var(--gradient-deep-ocean)" }}
-            animate={{ width: step === 1 ? "50%" : "100%" }}
-            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            animate={{ x: ["0%", "8%", "0%"], y: ["0%", "-4%", "0%"] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              position: "absolute",
+              top: "-60%",
+              left: "-20%",
+              width: "60%",
+              paddingBottom: "60%",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(160,224,171,0.18) 0%, transparent 65%)",
+              filter: "blur(40px)",
+            }}
+          />
+          <motion.div
+            animate={{ x: ["0%", "-6%", "0%"], y: ["0%", "5%", "0%"] }}
+            transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            style={{
+              position: "absolute",
+              top: "-40%",
+              right: "-15%",
+              width: "55%",
+              paddingBottom: "55%",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(255,172,46,0.15) 0%, transparent 65%)",
+              filter: "blur(40px)",
+            }}
           />
         </div>
-      )}
+
+        {/* Backdrop blur layer */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          }}
+        />
+
+        <div
+          className="relative flex items-center gap-3 px-5 py-4"
+          style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
+        >
+          {step < 3 && (
+            <button
+              onClick={() => {
+                setErrors([]);
+                if (step === 2) setStep(1);
+                else router.back();
+              }}
+              className="active:scale-[0.88] shrink-0"
+              style={{
+                color: "rgba(245,240,232,0.7)",
+                transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
+              }}
+            >
+              <ArrowLeft size={22} />
+            </button>
+          )}
+          <h1
+            className="font-clash flex-1 leading-none truncate"
+            style={{
+              fontSize: "16px",
+              fontWeight: 500,
+              color: "#F5F0E8",
+              letterSpacing: "-0.005em",
+              textShadow: "0 1px 8px rgba(0,0,0,0.5)",
+            }}
+          >
+            {step === 1 ? t.step1Title : step === 2 ? t.step2Title : t.step3Title}
+          </h1>
+
+          {/* Animated step dots: ●─○─○ progression */}
+          {step < 3 && (
+            <div className="flex items-center gap-1.5 shrink-0" aria-label={t.stepIndicator(step)}>
+              {[1, 2].map((s) => {
+                const isActive = s === step;
+                const isDone = s < step;
+                return (
+                  <motion.span
+                    key={s}
+                    animate={{
+                      width: isActive ? 18 : 6,
+                      backgroundColor: isDone
+                        ? "#F5F0E8"
+                        : isActive
+                        ? "#F5F0E8"
+                        : "rgba(245,240,232,0.25)",
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 28,
+                    }}
+                    style={{
+                      height: 6,
+                      borderRadius: 99,
+                      boxShadow: isActive
+                        ? "0 0 8px rgba(245,240,232,0.45)"
+                        : "none",
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </header>
 
       <AnimatePresence mode="wait">
 
@@ -423,12 +539,42 @@ export default function CreateBillClient() {
         {step === 1 && (
           <motion.div
             key="step1"
-            initial={{ opacity: 0, x: 24 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className="px-5 pt-6 flex flex-col gap-6"
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ type: "spring", stiffness: 280, damping: 32, mass: 0.8 }}
+            className="px-5 pt-7 flex flex-col gap-7"
           >
+            {/* Editorial kicker */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              className="mb-1"
+            >
+              <p
+                className="font-dm uppercase mb-2"
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.22em",
+                  color: "rgba(245,240,232,0.45)",
+                }}
+              >
+                Langkah 01
+              </p>
+              <h2
+                className="font-clash"
+                style={{
+                  fontSize: "30px",
+                  fontWeight: 500,
+                  color: "#F5F0E8",
+                  letterSpacing: "-0.025em",
+                  lineHeight: 1.05,
+                }}
+              >
+                Apa kita kumpul?
+              </h2>
+            </motion.div>
             {/* Title */}
             <div>
               <FieldLabel>{t.labelTitle}</FieldLabel>
@@ -497,34 +643,98 @@ export default function CreateBillClient() {
               )}
             </div>
 
-            {/* Split mode — 2-card grid */}
+            {/* Split mode — atmospheric cards */}
             <div>
               <FieldLabel>{t.labelSplitMode}</FieldLabel>
               <div className="grid grid-cols-2 gap-3">
                 {(["equal", "scan"] as const).map((mode) => {
                   const sel = splitMode === mode;
+                  const orbColor =
+                    mode === "equal"
+                      ? "rgba(160,224,171,0.18)"
+                      : "rgba(255,172,46,0.18)";
                   return (
-                    <button
+                    <motion.button
                       key={mode}
                       onClick={() => setSplitMode(mode)}
-                      className="flex flex-col gap-2 p-4 text-left active:scale-[0.96]"
+                      whileTap={{ scale: 0.96 }}
+                      whileHover={{ y: -2 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                      className="relative overflow-hidden flex flex-col gap-3 p-4 text-left"
                       style={{
-                        background: sel ? "rgba(255,255,255,0.04)" : "#111111",
-                        border: sel ? "1px solid rgba(255,255,255,0.25)" : "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: "10px",
-                        transition: "background 150ms, border-color 150ms, transform 120ms cubic-bezier(0.23,1,0.32,1)",
+                        background: sel ? "#161616" : "#0a0a0a",
+                        border: `1px solid ${
+                          sel
+                            ? "rgba(245,240,232,0.32)"
+                            : "rgba(255,255,255,0.06)"
+                        }`,
+                        borderRadius: "14px",
+                        transition:
+                          "background 220ms cubic-bezier(0.23,1,0.32,1), border-color 220ms cubic-bezier(0.23,1,0.32,1)",
                       }}
                     >
-                      <span style={{ fontSize: "20px" }}>{mode === "equal" ? "⚖️" : "📷"}</span>
-                      <div>
-                        <p className="font-dm font-semibold" style={{ fontSize: "13px", color: sel ? "#ffffff" : "#6d6d6d" }}>
+                      {/* Atmospheric halo on selected */}
+                      {sel && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.35 }}
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background: `radial-gradient(ellipse 80% 60% at 50% 30%, ${orbColor} 0%, transparent 65%)`,
+                            filter: "blur(8px)",
+                          }}
+                        />
+                      )}
+
+                      <motion.span
+                        animate={{
+                          scale: sel ? 1.1 : 1,
+                          rotate: sel ? [0, -8, 0] : 0,
+                        }}
+                        transition={{
+                          scale: { type: "spring", stiffness: 400, damping: 22 },
+                          rotate: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
+                        }}
+                        style={{
+                          fontSize: "26px",
+                          display: "inline-block",
+                          transformOrigin: "center",
+                          position: "relative",
+                          zIndex: 1,
+                        }}
+                      >
+                        {mode === "equal" ? "⚖️" : "📷"}
+                      </motion.span>
+
+                      <div className="relative z-10">
+                        <p
+                          className="font-clash"
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: sel ? "#F5F0E8" : "rgba(245,240,232,0.55)",
+                            letterSpacing: "-0.005em",
+                            transition: "color 220ms cubic-bezier(0.23,1,0.32,1)",
+                          }}
+                        >
                           {mode === "equal" ? t.splitEqualLabel : t.splitScanLabel}
                         </p>
-                        <p className="font-dm mt-0.5" style={{ fontSize: "11px", color: "#4a4a4a", lineHeight: 1.4 }}>
+                        <p
+                          className="font-dm mt-1"
+                          style={{
+                            fontSize: "11px",
+                            color: sel
+                              ? "rgba(245,240,232,0.55)"
+                              : "rgba(245,240,232,0.30)",
+                            lineHeight: 1.4,
+                            transition: "color 220ms cubic-bezier(0.23,1,0.32,1)",
+                          }}
+                        >
                           {mode === "equal" ? t.splitEqualDesc : t.splitScanDesc}
                         </p>
                       </div>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -625,12 +835,42 @@ export default function CreateBillClient() {
         {step === 2 && (
           <motion.div
             key="step2"
-            initial={{ opacity: 0, x: 24 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className="px-5 pt-6 flex flex-col gap-4"
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ type: "spring", stiffness: 280, damping: 32, mass: 0.8 }}
+            className="px-5 pt-7 flex flex-col gap-5"
           >
+            {/* Editorial kicker */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              className="mb-2"
+            >
+              <p
+                className="font-dm uppercase mb-2"
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.22em",
+                  color: "rgba(245,240,232,0.45)",
+                }}
+              >
+                Langkah 02
+              </p>
+              <h2
+                className="font-clash"
+                style={{
+                  fontSize: "30px",
+                  fontWeight: 500,
+                  color: "#F5F0E8",
+                  letterSpacing: "-0.025em",
+                  lineHeight: 1.05,
+                }}
+              >
+                Siapa berkongsi?
+              </h2>
+            </motion.div>
             {/* Amount summary — 2-col stat grid */}
             {amountPerPerson > 0 && (
               <div
@@ -777,46 +1017,207 @@ export default function CreateBillClient() {
             key="step3"
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-            className="px-5 pt-6 flex flex-col gap-4"
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            className="relative px-5 pt-6 flex flex-col gap-5"
           >
-            {/* Success hero */}
-            <div
-              className="relative overflow-hidden flex flex-col items-center gap-4 py-8 px-5 text-center"
-              style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
+            {/* Confetti burst on success */}
+            <Confetti active={true} />
+
+            {/* Atmospheric success hero — sculptural */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+              className="relative overflow-hidden flex flex-col items-center gap-5 py-10 px-5 text-center"
+              style={{
+                background: "#0a0a0a",
+                border: "1px solid rgba(34,197,94,0.18)",
+                borderRadius: "14px",
+              }}
             >
-              <div
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-36 pointer-events-none"
+              {/* Animated success orbs */}
+              <motion.div
+                animate={{
+                  scale: [1, 1.15, 1],
+                  opacity: [0.5, 0.85, 0.5],
+                }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute pointer-events-none"
                 style={{
-                  background: "radial-gradient(ellipse, rgba(34,197,94,0.18) 0%, transparent 70%)",
-                  filter: "blur(20px)",
-                  marginTop: "-20px",
+                  top: "-30%",
+                  left: "-15%",
+                  width: "80%",
+                  paddingBottom: "80%",
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle, rgba(34,197,94,0.20) 0%, transparent 65%)",
+                  filter: "blur(30px)",
                 }}
               />
-              <div className="relative z-10 flex flex-col items-center gap-3">
-                <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center"
-                  style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.25)" }}
-                >
-                  <Check size={26} style={{ color: "#22c55e" }} strokeWidth={2.5} />
-                </div>
-                <div>
-                  <h2 className="font-clash font-bold text-frost" style={{ fontSize: "20px" }}>{title}</h2>
-                  <p className="font-dm text-whisper text-sm mt-1">
-                    {t.successDesc}
-                  </p>
-                </div>
-              </div>
-            </div>
+              <motion.div
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: [0.4, 0.7, 0.4],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1,
+                }}
+                className="absolute pointer-events-none"
+                style={{
+                  bottom: "-30%",
+                  right: "-15%",
+                  width: "70%",
+                  paddingBottom: "70%",
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle, rgba(160,224,171,0.18) 0%, transparent 65%)",
+                  filter: "blur(30px)",
+                }}
+              />
 
-            {/* Pay code */}
-            <div
-              className="flex flex-col gap-2 p-4"
-              style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
+              {/* Check icon with spring entrance */}
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 260,
+                  damping: 18,
+                  delay: 0.3,
+                }}
+                className="relative w-16 h-16 rounded-full flex items-center justify-center"
+                style={{
+                  background: "rgba(34,197,94,0.12)",
+                  border: "1px solid rgba(34,197,94,0.35)",
+                  boxShadow: "0 0 24px rgba(34,197,94,0.25)",
+                }}
+              >
+                <Check size={28} style={{ color: "#22c55e" }} strokeWidth={2.5} />
+              </motion.div>
+
+              {/* Editorial kicker */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                className="relative z-10"
+              >
+                <p
+                  className="font-dm uppercase mb-2"
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.22em",
+                    color: "rgba(34,197,94,0.7)",
+                  }}
+                >
+                  Berjaya dicipta
+                </p>
+                <h2
+                  className="font-clash"
+                  style={{
+                    fontSize: "26px",
+                    fontWeight: 500,
+                    color: "#F5F0E8",
+                    letterSpacing: "-0.025em",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {title}
+                </h2>
+                <p
+                  className="font-dm mt-3"
+                  style={{
+                    fontSize: "13px",
+                    color: "rgba(245,240,232,0.55)",
+                    lineHeight: 1.55,
+                    maxWidth: "260px",
+                  }}
+                >
+                  {t.successDesc}
+                </p>
+              </motion.div>
+            </motion.div>
+
+            {/* Pay code — sculptural with character-by-character reveal */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              className="flex flex-col gap-3 p-5"
+              style={{
+                background: "#0a0a0a",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: "14px",
+              }}
             >
-              <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>{t.payCodeLabel}</p>
-              <PayCodeDisplay code={createdPayCode} />
-            </div>
+              <p
+                className="font-dm uppercase"
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.22em",
+                  color: "rgba(245,240,232,0.45)",
+                }}
+              >
+                {t.payCodeLabel}
+              </p>
+
+              {/* Cinematic character reveal */}
+              <div className="flex items-center justify-center gap-1 py-2">
+                {createdPayCode.split("").map((char, i) => (
+                  <motion.span
+                    key={`${createdPayCode}-${i}`}
+                    initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{
+                      delay: 0.85 + i * 0.06,
+                      duration: 0.5,
+                      ease: [0.23, 1, 0.32, 1],
+                    }}
+                    className="font-jetbrains font-medium"
+                    style={{
+                      fontSize: "32px",
+                      letterSpacing: "0.04em",
+                      color:
+                        char === "-" ? "rgba(245,240,232,0.35)" : "#F5F0E8",
+                      textShadow:
+                        char === "-"
+                          ? "none"
+                          : "0 2px 16px rgba(245,240,232,0.2)",
+                      display: "inline-block",
+                    }}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </div>
+
+              {/* Hairline divider + functional copy */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  delay: 0.85 + createdPayCode.length * 0.06 + 0.3,
+                  duration: 0.4,
+                }}
+                className="flex items-center justify-between pt-3 mt-1"
+                style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+              >
+                <p
+                  className="font-dm"
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(245,240,232,0.45)",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  Masuk dalam rujukan pembayaran
+                </p>
+                <PayCodeCopyButton code={createdPayCode} />
+              </motion.div>
+            </motion.div>
 
             {/* Member links */}
             <div
