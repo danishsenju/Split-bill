@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MessageSquare, X } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { WATone } from "@/types";
 import { buildWAMessage, buildWAUrl } from "@/lib/whatsapp";
 
@@ -18,7 +18,10 @@ interface Props {
   payCode: string;
   members: MemberInfo[];
   dueDate: string;
-  onClose: () => void;
+  tone: WATone;
+  onToneChange: (tone: WATone) => void;
+  customTemplate: string;
+  onCustomTemplateChange: (template: string) => void;
 }
 
 const TONE_LABELS: Record<WATone, string> = {
@@ -33,10 +36,11 @@ export default function WAToneSelector({
   payCode,
   members,
   dueDate,
-  onClose,
+  tone,
+  onToneChange,
+  customTemplate,
+  onCustomTemplateChange,
 }: Props) {
-  const [tone, setTone] = useState<WATone>("firm");
-  const [customTemplate, setCustomTemplate] = useState("");
   const [selectedMemberIdx, setSelectedMemberIdx] = useState(0);
 
   const previewMember = members[selectedMemberIdx] ?? members[0];
@@ -92,9 +96,6 @@ export default function WAToneSelector({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-syne font-bold text-text-primary">Hantar WhatsApp</h3>
-        <button onClick={onClose} className="text-text-muted">
-          <X size={18} />
-        </button>
       </div>
 
       {/* Tone selector */}
@@ -104,7 +105,7 @@ export default function WAToneSelector({
           {(Object.keys(TONE_LABELS) as WATone[]).map((t) => (
             <button
               key={t}
-              onClick={() => setTone(t)}
+              onClick={() => onToneChange(t)}
               className={`py-2.5 rounded-btn text-xs font-dm font-medium border transition-colors ${
                 tone === t
                   ? "border-accent bg-accent/10 text-accent"
@@ -128,7 +129,7 @@ export default function WAToneSelector({
           </p>
           <textarea
             value={customTemplate}
-            onChange={(e) => setCustomTemplate(e.target.value)}
+            onChange={(e) => onCustomTemplateChange(e.target.value)}
             placeholder={`Hai {nama}, sila bayar RM {amount}. Code: {code}. {link}`}
             rows={4}
             className="w-full bg-bg-surface border border-white/10 rounded-input px-4 py-3 text-text-primary font-dm text-sm resize-none"

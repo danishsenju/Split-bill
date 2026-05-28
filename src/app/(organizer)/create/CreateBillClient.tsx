@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Users, Search, X } from "lucide-react";
-import { ScanResult } from "@/types";
+import { Plus, Trash2, ArrowLeft, ArrowRight, Check, Users, Search, X, MessageCircle } from "lucide-react";
+import { ScanResult, WATone } from "@/types";
 import { generatePayCode } from "@/lib/paycode";
 import { formatRM } from "@/lib/utils";
+import { buildWAMessage, buildWAUrl } from "@/lib/whatsapp";
 import PayCodeDisplay from "@/components/ui/PayCodeDisplay";
 import ReceiptScanner from "@/components/receipt/ReceiptScanner";
 import ReceiptEditList from "@/components/receipt/ReceiptEditList";
@@ -264,12 +265,33 @@ export default function CreateBillClient() {
 
   // Step 3
   const [createdPayCode, setCreatedPayCode] = useState("");
-  const [showWA, setShowWA] = useState(false);
+  const [tone, setTone] = useState<WATone>("firm");
+  const [customTemplate, setCustomTemplate] = useState("");
   const [createdMembers, setCreatedMembers] = useState<
     Array<{ name: string; phone: string; personal_token: string; amount_owed: number }>
   >([]);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+  function openWAForMember(m: { name: string; phone: string; personal_token: string; amount_owed: number }) {
+    if (!m.phone) return;
+    const formattedDue = dueDate
+      ? new Date(dueDate).toLocaleDateString("ms-MY", { day: "numeric", month: "short", year: "numeric" })
+      : "";
+    const msg = buildWAMessage(
+      tone,
+      {
+        nama: m.name,
+        amount: m.amount_owed.toFixed(2),
+        tajuk: title,
+        due_date: formattedDue,
+        code: createdPayCode,
+        link: `${appUrl}/pay/${createdPayCode}?t=${m.personal_token}`,
+      },
+      tone === "custom" ? customTemplate : undefined
+    );
+    window.open(buildWAUrl(m.phone, msg), "_blank");
+  }
 
   function validateStep1(): boolean {
     const errs: string[] = [];
@@ -842,40 +864,44 @@ export default function CreateBillClient() {
                   >
                     {formatRM(m.amount_owed)}
                   </span>
+                  <button
+                    onClick={() => openWAForMember(m)}
+                    disabled={!m.phone}
+                    title={m.phone ? `Hantar WhatsApp ke ${m.name}` : "Tiada no. telefon"}
+                    className="shrink-0 flex items-center justify-center active:scale-[0.9]"
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: "rgba(34,197,94,0.10)",
+                      border: "1px solid rgba(34,197,94,0.30)",
+                      color: "#22c55e",
+                      cursor: m.phone ? "pointer" : "not-allowed",
+                      opacity: m.phone ? 1 : 0.3,
+                      transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
+                    }}
+                  >
+                    <MessageCircle size={15} />
+                  </button>
                 </div>
               ))}
             </div>
 
-            {/* WhatsApp ghost button */}
-            <button
-              onClick={() => setShowWA(true)}
-              className="flex items-center justify-center gap-2 font-dm font-semibold text-sm active:scale-[0.97]"
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(34,197,94,0.3)",
-                borderRadius: "75.024px",
-                padding: "14px 0",
-                color: "#22c55e",
-                transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
-              }}
-            >
-              <span>📲</span> {t.whatsappBtn}
-            </button>
-
-            {showWA && (
-              <WAToneSelector
-                billTitle={title}
-                payCode={createdPayCode}
-                members={createdMembers.map((m) => ({
-                  name: m.name,
-                  phone: m.phone,
-                  amount: m.amount_owed.toFixed(2),
-                  link: `${appUrl}/pay/${createdPayCode}?t=${m.personal_token}`,
-                }))}
-                dueDate={dueDate}
-                onClose={() => setShowWA(false)}
-              />
-            )}
+            <WAToneSelector
+              billTitle={title}
+              payCode={createdPayCode}
+              members={createdMembers.map((m) => ({
+                name: m.name,
+                phone: m.phone,
+                amount: m.amount_owed.toFixed(2),
+                link: `${appUrl}/pay/${createdPayCode}?t=${m.personal_token}`,
+              }))}
+              dueDate={dueDate}
+              tone={tone}
+              onToneChange={setTone}
+              customTemplate={customTemplate}
+              onCustomTemplateChange={setCustomTemplate}
+            />
 
             {/* Dashboard CTA */}
             <Link
