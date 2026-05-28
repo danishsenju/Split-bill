@@ -111,7 +111,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert members
-    const amountPerPerson = totalAmount / members.length;
+    // Equal mode → split total evenly upfront.
+    // Scan mode → amount starts at 0; each member's owed amount is computed
+    // after they claim their items on the pay page.
+    const amountPerPerson = splitMode === "equal" ? totalAmount / members.length : 0;
     const { generatePersonalToken } = await import("@/lib/paycode");
 
     const memberRows = members.map((m) => ({

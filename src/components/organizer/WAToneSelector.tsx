@@ -65,7 +65,6 @@ export default function WAToneSelector({
   );
 
   function openWA(member: MemberInfo) {
-    if (!member.phone) return;
     const msg = buildWAMessage(
       tone,
       {
@@ -78,13 +77,13 @@ export default function WAToneSelector({
       },
       tone === "custom" ? customTemplate : undefined
     );
+    // Empty phone → WA opens with the message pre-filled and prompts the
+    // organizer to pick a contact manually.
     window.open(buildWAUrl(member.phone, msg), "_blank");
   }
 
   function openAllWA() {
-    members.forEach((m) => {
-      if (m.phone) openWA(m);
-    });
+    members.forEach((m) => openWA(m));
   }
 
   return (
@@ -169,7 +168,7 @@ export default function WAToneSelector({
 
       {/* Send buttons */}
       <div className="flex flex-col gap-2">
-        {previewMember?.phone && (
+        {previewMember && (
           <button
             onClick={() => openWA(previewMember)}
             className="flex items-center justify-center gap-2 bg-success/20 border border-success/30 text-success font-dm font-semibold py-3 rounded-btn text-sm"
@@ -185,14 +184,14 @@ export default function WAToneSelector({
             className="flex items-center justify-center gap-2 bg-bg-surface border border-white/10 text-text-secondary font-dm text-sm py-3 rounded-btn"
           >
             <MessageSquare size={16} />
-            Hantar ke Semua ({members.filter((m) => m.phone).length} ahli)
+            Hantar ke Semua ({members.length} ahli)
           </button>
         )}
       </div>
 
       {members.some((m) => !m.phone) && (
         <p className="text-text-muted text-xs font-dm text-center">
-          {members.filter((m) => !m.phone).length} ahli tiada nombor telefon
+          Ahli tanpa nombor: WhatsApp buka tanpa contact — anda pilih sendiri.
         </p>
       )}
     </motion.div>

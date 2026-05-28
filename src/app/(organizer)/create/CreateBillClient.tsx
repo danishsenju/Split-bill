@@ -274,15 +274,17 @@ export default function CreateBillClient() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   function openWAForMember(m: { name: string; phone: string; personal_token: string; amount_owed: number }) {
-    if (!m.phone) return;
     const formattedDue = dueDate
       ? new Date(dueDate).toLocaleDateString("ms-MY", { day: "numeric", month: "short", year: "numeric" })
       : "";
+    // For scan mode the amount is unknown until the member claims items —
+    // use a placeholder so the message still makes sense.
+    const amountText = splitMode === "scan" ? "(ikut item dipilih)" : m.amount_owed.toFixed(2);
     const msg = buildWAMessage(
       tone,
       {
         nama: m.name,
-        amount: m.amount_owed.toFixed(2),
+        amount: amountText,
         tajuk: title,
         due_date: formattedDue,
         code: createdPayCode,
@@ -290,6 +292,8 @@ export default function CreateBillClient() {
       },
       tone === "custom" ? customTemplate : undefined
     );
+    // Empty phone → wa.me/?text=... opens WhatsApp with the message
+    // pre-filled and lets the organizer pick a contact manually.
     window.open(buildWAUrl(m.phone, msg), "_blank");
   }
 
@@ -852,22 +856,34 @@ export default function CreateBillClient() {
                       {appUrl}/pay/{createdPayCode}?t={m.personal_token}
                     </p>
                   </div>
-                  <span
-                    className="font-clash font-bold shrink-0"
-                    style={{
-                      fontSize: "13px",
-                      background: "var(--gradient-deep-ocean)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                    }}
-                  >
-                    {formatRM(m.amount_owed)}
-                  </span>
+                  {splitMode === "scan" ? (
+                    <span
+                      className="font-dm shrink-0"
+                      style={{ fontSize: "11px", color: "#8B9E88", fontStyle: "italic" }}
+                    >
+                      Ikut item
+                    </span>
+                  ) : (
+                    <span
+                      className="font-clash font-bold shrink-0"
+                      style={{
+                        fontSize: "13px",
+                        background: "var(--gradient-deep-ocean)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}
+                    >
+                      {formatRM(m.amount_owed)}
+                    </span>
+                  )}
                   <button
                     onClick={() => openWAForMember(m)}
-                    disabled={!m.phone}
-                    title={m.phone ? `Hantar WhatsApp ke ${m.name}` : "Tiada no. telefon"}
+                    title={
+                      m.phone
+                        ? `Hantar WhatsApp ke ${m.name}`
+                        : `Buka WhatsApp — pilih contact untuk ${m.name}`
+                    }
                     className="shrink-0 flex items-center justify-center active:scale-[0.9]"
                     style={{
                       width: "32px",
@@ -876,8 +892,7 @@ export default function CreateBillClient() {
                       background: "rgba(34,197,94,0.10)",
                       border: "1px solid rgba(34,197,94,0.30)",
                       color: "#22c55e",
-                      cursor: m.phone ? "pointer" : "not-allowed",
-                      opacity: m.phone ? 1 : 0.3,
+                      cursor: "pointer",
                       transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
                     }}
                   >
