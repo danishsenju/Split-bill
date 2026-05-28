@@ -114,8 +114,9 @@ export default function DashboardClient({
 
   return (
     <div
+      className="theme-aware"
       style={{
-        background: "#000000",
+        background: "var(--theme-bg)",
         minHeight: "100dvh",
         paddingBottom: "112px",
       }}
@@ -157,7 +158,7 @@ export default function DashboardClient({
           />
         </div>
 
-        {/* ── Bottom fade — blends hero into pure black below ── */}
+        {/* ── Bottom fade — blends hero into theme bg below ── */}
         <div
           aria-hidden
           style={{
@@ -167,9 +168,10 @@ export default function DashboardClient({
             right: 0,
             height: "32%",
             background:
-              "linear-gradient(to bottom, transparent, #000000 95%)",
+              "linear-gradient(to bottom, transparent, var(--theme-bg) 95%)",
             pointerEvents: "none",
             zIndex: 1,
+            transition: "background 320ms cubic-bezier(0.23,1,0.32,1)",
           }}
         />
 
@@ -393,7 +395,7 @@ export default function DashboardClient({
       {/* ── HAIRLINE ───────────────────────────────────────────────────── */}
       <div
         className="mx-5"
-        style={{ height: "1px", background: "rgba(255,255,255,0.06)" }}
+        style={{ height: "1px", background: "var(--theme-hairline)" }}
       />
 
       {/* ── BILLS LIST ─────────────────────────────────────────────────── */}
@@ -405,10 +407,10 @@ export default function DashboardClient({
           className="flex items-baseline justify-between mb-5"
         >
           <h2
-            className="font-clash"
+            className="font-clash theme-aware"
             style={{
               fontSize: "13px",
-              color: "#F5F0E8",
+              color: "var(--theme-text)",
               letterSpacing: "0.01em",
               fontWeight: 600,
             }}
@@ -417,10 +419,10 @@ export default function DashboardClient({
           </h2>
           <Link
             href="/bills"
-            className="font-dm active:opacity-50"
+            className="font-dm active:opacity-50 theme-aware"
             style={{
               fontSize: "11px",
-              color: "#6d6d6d",
+              color: "var(--theme-text-muted)",
               letterSpacing: "0.04em",
               transition: "opacity 150ms cubic-bezier(0.23, 1, 0.32, 1)",
             }}
@@ -525,13 +527,16 @@ function StatCell({
         paddingLeft: divider ? "20px" : "0",
       }}
     >
-      <CountUp to={value} color={accent ? "#a0e0ab" : "#F5F0E8"} />
+      <CountUp
+        to={value}
+        color={accent ? "#a0e0ab" : "var(--theme-text)"}
+      />
       <span
-        className="font-dm uppercase"
+        className="font-dm uppercase theme-aware"
         style={{
           fontSize: "9px",
           letterSpacing: "0.16em",
-          color: "#6d6d6d",
+          color: "var(--theme-text-muted)",
         }}
       >
         {label}
@@ -702,7 +707,7 @@ function BillListRow({
         className="relative flex items-center gap-4 py-5 cursor-pointer -mx-2 px-2 rounded-[8px]"
         style={
           {
-            borderTop: isFirst ? "none" : "1px solid rgba(255,255,255,0.06)",
+            borderTop: isFirst ? "none" : "1px solid var(--theme-hairline)",
             transform: isPressing ? "scale(0.985)" : "scale(1)",
             background: isPressing
               ? "radial-gradient(ellipse 80% 100% at 0% 50%, rgba(160,224,171,0.06) 0%, transparent 70%)"
@@ -723,11 +728,11 @@ function BillListRow({
         {/* Title + sub */}
         <div className="flex-1 min-w-0">
           <p
-            className="font-clash truncate"
+            className="font-clash truncate theme-aware"
             style={{
               fontSize: "15px",
               fontWeight: 500,
-              color: "#F5F0E8",
+              color: "var(--theme-text)",
               letterSpacing: "-0.005em",
               lineHeight: 1.2,
             }}
@@ -735,10 +740,10 @@ function BillListRow({
             {bill.title}
           </p>
           <p
-            className="font-dm mt-1"
+            className="font-dm mt-1 theme-aware"
             style={{
               fontSize: "11px",
-              color: isOverdue ? "rgb(220,90,80)" : "#6d6d6d",
+              color: isOverdue ? "rgb(220,90,80)" : "var(--theme-text-muted)",
               letterSpacing: "0.02em",
             }}
           >
@@ -748,11 +753,11 @@ function BillListRow({
 
         {/* Amount — right-aligned mono numeric */}
         <span
-          className="font-clash shrink-0"
+          className="font-clash shrink-0 theme-aware"
           style={{
             fontSize: "15px",
             fontWeight: 500,
-            color: "#F5F0E8",
+            color: "var(--theme-text)",
             letterSpacing: "-0.01em",
             fontFeatureSettings: '"tnum"',
           }}

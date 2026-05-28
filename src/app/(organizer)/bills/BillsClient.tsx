@@ -64,7 +64,14 @@ export default function BillsClient({ bills }: { bills: Bill[] }) {
   const isEmpty = filtered.length === 0;
 
   return (
-    <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "112px" }}>
+    <div
+      className="theme-aware"
+      style={{
+        background: "var(--theme-bg)",
+        minHeight: "100dvh",
+        paddingBottom: "112px",
+      }}
+    >
 
       {/* ══════════════════════════════════════════════════════════════════
           ATMOSPHERIC HERO — sculptural Outstanding amount

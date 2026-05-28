@@ -53,14 +53,10 @@ export default function BottomNav() {
   return (
     <>
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 max-w-mobile mx-auto z-30"
+        className="md:hidden fixed bottom-0 left-0 right-0 max-w-mobile mx-auto z-30 theme-aware"
         style={{
-          background: "#000000",
-          borderTop: "1px solid transparent",
-          backgroundImage:
-            "linear-gradient(#000000, #000000), var(--gradient-deep-ocean)",
-          backgroundOrigin: "border-box",
-          backgroundClip: "padding-box, border-box",
+          background: "var(--theme-bg)",
+          borderTop: "1px solid var(--theme-border)",
         }}
       >
         <div className="flex items-center justify-around px-3 py-2">
@@ -106,13 +102,19 @@ export default function BottomNav() {
                 <Icon
                   size={20}
                   strokeWidth={active ? 2.5 : 1.5}
-                  style={{ color: active ? "#ffffff" : "#6d6d6d" }}
+                  style={{
+                    color: active
+                      ? "var(--theme-text)"
+                      : "var(--theme-text-muted)",
+                  }}
                 />
                 <span
-                  className="font-dm leading-none"
+                  className="font-dm leading-none theme-aware"
                   style={{
                     fontSize: "10px",
-                    color: active ? "#ffffff" : "#6d6d6d",
+                    color: active
+                      ? "var(--theme-text)"
+                      : "var(--theme-text-muted)",
                   }}
                 >
                   {label}

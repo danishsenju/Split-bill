@@ -34,7 +34,9 @@
   --theme-bg: #000000;
   --theme-bg-elevated: #0a0a0a;
   --theme-bg-card: #111111;
+  --theme-bg-overlay: rgba(0, 0, 0, 0.55);
   --theme-text: #F5F0E8;
+  --theme-text-strong: #ffffff;
   --theme-text-secondary: rgba(245, 240, 232, 0.55);
   --theme-text-muted: rgba(245, 240, 232, 0.30);
   --theme-text-faint: rgba(245, 240, 232, 0.18);
@@ -42,20 +44,34 @@
   --theme-border-strong: rgba(255, 255, 255, 0.18);
   --theme-hairline: rgba(255, 255, 255, 0.06);
   --theme-surface-tint: rgba(255, 255, 255, 0.04);
+  --theme-surface-tint-2: rgba(255, 255, 255, 0.06);
+  --theme-press-tint: rgba(255, 255, 255, 0.08);
+  --theme-shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --theme-text-shadow-hero: 0 2px 16px rgba(0, 0, 0, 0.55);
+  --theme-atmosphere-opacity: 1;
+  --theme-mode-indicator: 0; /* 0 = dark, 1 = light — for conditional CSS */
 }
 
 [data-theme="light"] {
   --theme-bg: #F5F0E8;
   --theme-bg-elevated: #ffffff;
   --theme-bg-card: #ffffff;
+  --theme-bg-overlay: rgba(245, 240, 232, 0.55);
   --theme-text: #0a0a0a;
-  --theme-text-secondary: rgba(10, 10, 10, 0.60);
-  --theme-text-muted: rgba(10, 10, 10, 0.38);
-  --theme-text-faint: rgba(10, 10, 10, 0.20);
+  --theme-text-strong: #000000;
+  --theme-text-secondary: rgba(10, 10, 10, 0.62);
+  --theme-text-muted: rgba(10, 10, 10, 0.42);
+  --theme-text-faint: rgba(10, 10, 10, 0.22);
   --theme-border: rgba(10, 10, 10, 0.08);
-  --theme-border-strong: rgba(10, 10, 10, 0.22);
-  --theme-hairline: rgba(10, 10, 10, 0.06);
+  --theme-border-strong: rgba(10, 10, 10, 0.24);
+  --theme-hairline: rgba(10, 10, 10, 0.07);
   --theme-surface-tint: rgba(10, 10, 10, 0.04);
+  --theme-surface-tint-2: rgba(10, 10, 10, 0.06);
+  --theme-press-tint: rgba(10, 10, 10, 0.06);
+  --theme-shadow-elevated: 0 8px 24px rgba(10, 10, 10, 0.10);
+  --theme-text-shadow-hero: 0 2px 12px rgba(255, 255, 255, 0.4);
+  --theme-atmosphere-opacity: 0.45;
+  --theme-mode-indicator: 1;
 }
 
 /* Smooth theme transitions on surfaces that opt in via theme-aware vars */

@@ -98,7 +98,14 @@ export default function FriendsClient({ initialFriends }: { initialFriends: Frie
   const getInitial = (name: string) => name.charAt(0).toUpperCase();
 
   return (
-    <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "96px" }}>
+    <div
+      className="theme-aware"
+      style={{
+        background: "var(--theme-bg)",
+        minHeight: "100dvh",
+        paddingBottom: "96px",
+      }}
+    >
 
       {/* Header */}
       <header

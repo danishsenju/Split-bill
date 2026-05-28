@@ -102,7 +102,13 @@ export default function FlagsClient({
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: "#000000", paddingBottom: "112px" }}>
+    <div
+      className="min-h-dvh theme-aware"
+      style={{
+        background: "var(--theme-bg)",
+        paddingBottom: "112px",
+      }}
+    >
       {/* Sticky header */}
       <header
         className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4 md:top-[60px]"

@@ -410,7 +410,14 @@ export default function CreateBillClient() {
     ? computedBillTotal / validMemberCount : 0;
 
   return (
-    <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "96px" }}>
+    <div
+      className="theme-aware"
+      style={{
+        background: "var(--theme-bg)",
+        minHeight: "100dvh",
+        paddingBottom: "96px",
+      }}
+    >
 
       {/* ── STICKY HEADER with atmospheric backdrop ───────────────────── */}
       <header
@@ -787,7 +794,7 @@ export default function CreateBillClient() {
                   <div className="flex flex-col gap-4">
                     <div
                       className="flex items-center justify-between p-4"
-                      style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
+                      style={{ background: "var(--theme-bg-card)", border: "1px solid var(--theme-border)", borderRadius: "10px" }}
                     >
                       <div>
                         <p className="font-dm text-frost font-medium text-sm">
@@ -916,7 +923,7 @@ export default function CreateBillClient() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.04 }}
                   className="flex flex-col gap-3 p-4"
-                  style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
+                  style={{ background: "var(--theme-bg-card)", border: "1px solid var(--theme-border)", borderRadius: "10px" }}
                 >
                   <div className="flex items-center justify-between">
                     <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>{t.memberLabel(idx + 1)}</p>
@@ -1222,7 +1229,7 @@ export default function CreateBillClient() {
             {/* Member links */}
             <div
               className="flex flex-col p-4 gap-3"
-              style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}
+              style={{ background: "var(--theme-bg-card)", border: "1px solid var(--theme-border)", borderRadius: "10px" }}
             >
               <p className="font-dm text-whisper" style={{ fontSize: "12px" }}>{t.memberLinksLabel}</p>
               {createdMembers.map((m, i) => (

@@ -155,7 +155,6 @@ export function PrimaryButton({
   // Outer "ring" classes — this is the wrap that becomes the click target
   const wrapClasses = cn(
     "relative overflow-hidden rounded-full p-[3px] backdrop-blur-sm",
-    "bg-neutral-900",
     "shadow-[0px_1px_0px_0px_#0a0a0a_inset,0px_1px_0px_0px_#262626]",
     "transition-transform duration-100 active:scale-[0.98]",
     disabled && "opacity-40 cursor-not-allowed pointer-events-none",
@@ -163,7 +162,8 @@ export function PrimaryButton({
     className,
   );
 
-  // Inner pill — dark gradient surface with subtle bevel
+  // Inner pill — theme-aware: dark mode = dark pill / light mode = dark pill on cream wrap.
+  // We always keep the inner pill dark for legibility against the noise ring's bright halo.
   const innerPill = (
     <span
       className={cn(

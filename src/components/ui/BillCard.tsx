@@ -39,36 +39,37 @@ export default function BillCard({ bill }: BillCardProps) {
   return (
     <Link href={`/bills/${bill.id}`}>
       <div
-        className="flex flex-col gap-3 p-4 active:scale-[0.97] select-none"
+        className="theme-aware flex flex-col gap-3 p-4 active:scale-[0.97] select-none"
         style={{
-          background: "#111111",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "var(--theme-bg-card)",
+          border: "1px solid var(--theme-border)",
           borderRadius: "10px",
-          transition: "transform 160ms cubic-bezier(0.23, 1, 0.32, 1)",
+          transition:
+            "transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 280ms, border-color 280ms",
         }}
       >
         {/* Top row */}
         <div className="flex items-start gap-3">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: "rgba(255,255,255,0.06)" }}
+            style={{ background: "var(--theme-surface-tint-2)" }}
           >
-            <CategoryIcon
-              category={bill.category}
-              size={20}
-            />
+            <CategoryIcon category={bill.category} size={20} />
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-frost font-dm font-semibold text-sm truncate">
+            <p
+              className="font-dm font-semibold text-sm truncate theme-aware"
+              style={{ color: "var(--theme-text)" }}
+            >
               {bill.title}
             </p>
             <p
-              className="font-jetbrains mt-0.5"
+              className="font-jetbrains mt-0.5 theme-aware"
               style={{
                 fontSize: "11px",
                 letterSpacing: "2px",
-                color: "#6d6d6d",
+                color: "var(--theme-text-muted)",
               }}
             >
               {bill.pay_code}
@@ -86,7 +87,7 @@ export default function BillCard({ bill }: BillCardProps) {
         {/* Gradient progress bar */}
         <div
           className="w-full rounded-full overflow-hidden"
-          style={{ height: "3px", background: "rgba(255,255,255,0.06)" }}
+          style={{ height: "3px", background: "var(--theme-border)" }}
         >
           <motion.div
             className="h-full rounded-full"
@@ -110,11 +111,11 @@ export default function BillCard({ bill }: BillCardProps) {
                   className={`w-6 h-6 rounded-full flex items-center justify-center font-clash font-bold border ${i > 0 ? "-ml-1.5" : ""}`}
                   style={{
                     fontSize: "10px",
-                    borderColor: "#111111",
+                    borderColor: "var(--theme-bg-card)",
                     background: m.paid
                       ? "rgba(34,197,94,0.2)"
-                      : "rgba(255,255,255,0.06)",
-                    color: m.paid ? "#22c55e" : "#6d6d6d",
+                      : "var(--theme-surface-tint-2)",
+                    color: m.paid ? "#22c55e" : "var(--theme-text-muted)",
                   }}
                 >
                   {getInitial(m.name)}
@@ -125,23 +126,38 @@ export default function BillCard({ bill }: BillCardProps) {
                   className="w-6 h-6 rounded-full flex items-center justify-center font-dm -ml-1.5 border"
                   style={{
                     fontSize: "9px",
-                    borderColor: "#111111",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "#6d6d6d",
+                    borderColor: "var(--theme-bg-card)",
+                    background: "var(--theme-surface-tint)",
+                    color: "var(--theme-text-muted)",
                   }}
                 >
                   +{overflow}
                 </div>
               )}
             </div>
-            <span className="font-dm" style={{ fontSize: "11px", color: "#6d6d6d" }}>
+            <span
+              className="font-dm"
+              style={{
+                fontSize: "11px",
+                color: "var(--theme-text-muted)",
+              }}
+            >
               {paidCount}/{totalCount}
             </span>
           </div>
 
-          <span className="font-dm text-sm" style={{ color: "#ffffff" }}>
+          <span
+            className="font-dm text-sm"
+            style={{ color: "var(--theme-text)" }}
+          >
             {formatRM(amountCollected)}
-            <span style={{ color: "#6d6d6d", fontWeight: 400, fontSize: "12px" }}>
+            <span
+              style={{
+                color: "var(--theme-text-muted)",
+                fontWeight: 400,
+                fontSize: "12px",
+              }}
+            >
               {" "}/ {formatRM(bill.total_amount)}
             </span>
           </span>

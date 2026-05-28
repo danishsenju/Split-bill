@@ -109,7 +109,10 @@ export default function BillDetailClient({
   const cat = categoryTone(bill.category);
 
   return (
-    <div className="min-h-dvh" style={{ background: "#000" }}>
+    <div
+      className="min-h-dvh theme-aware"
+      style={{ background: "var(--theme-bg)" }}
+    >
       {/* ══════════════════════════════════════════════════════════════════
           HERO — category-themed atmospheric backdrop
       ═══════════════════════════════════════════════════════════════════ */}
@@ -150,11 +153,11 @@ export default function BillDetailClient({
         <div
           className="sticky top-0 z-20 flex items-center gap-3 px-4 pb-3 md:top-[60px]"
           style={{
-            background: "rgba(0,0,0,0.55)",
+            background: "var(--theme-bg-overlay)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             paddingTop: "calc(env(safe-area-inset-top) + 16px)",
-            borderBottom: "1px solid rgba(255,255,255,0.04)",
+            borderBottom: "1px solid var(--theme-border)",
           }}
         >
           <motion.button
@@ -407,7 +410,7 @@ export default function BillDetailClient({
           onClick={() => members.filter((m) => !m.paid && m.phone).forEach(sendReminder)}
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full font-dm text-sm text-white/50"
           style={{
-            background: "rgba(255,255,255,0.03)",
+            background: "var(--theme-surface-tint)",
             border: "1px solid rgba(255,255,255,0.09)",
             transition: "transform 160ms cubic-bezier(0.23,1,0.32,1), opacity 160ms cubic-bezier(0.23,1,0.32,1)",
           }}
@@ -458,7 +461,7 @@ export default function BillDetailClient({
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center font-clash font-bold text-sm shrink-0 text-white/50"
                   style={{
-                    background: "rgba(255,255,255,0.05)",
+                    background: "var(--theme-surface-tint-2)",
                     border: "1px solid rgba(255,255,255,0.09)",
                   }}
                 >

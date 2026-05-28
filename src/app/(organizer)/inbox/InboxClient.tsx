@@ -110,7 +110,14 @@ export default function InboxClient({ activities }: Props) {
   const activeFlags = activities.filter((a) => a.activity_type === "flag_created").length;
 
   return (
-    <div style={{ background: "#000000", minHeight: "100dvh", paddingBottom: "112px" }}>
+    <div
+      className="theme-aware"
+      style={{
+        background: "var(--theme-bg)",
+        minHeight: "100dvh",
+        paddingBottom: "112px",
+      }}
+    >
 
       {/* ── STICKY HEADER ─────────────────────────────────────────────── */}
       <header

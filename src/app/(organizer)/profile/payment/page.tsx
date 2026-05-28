@@ -129,8 +129,12 @@ export default function AddPaymentPage() {
 
   return (
     <div
-      className="min-h-dvh flex flex-col px-5 py-10"
-      style={{ background: "#000000", maxWidth: 480, margin: "0 auto" }}
+      className="min-h-dvh flex flex-col px-5 py-10 theme-aware"
+      style={{
+        background: "var(--theme-bg)",
+        maxWidth: 480,
+        margin: "0 auto",
+      }}
     >
       {/* Back */}
       <button
