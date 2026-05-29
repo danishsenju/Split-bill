@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Receipt, Plus, Inbox, User, ArrowRight } from "lucide-react";
+import { LayoutDashboard, Receipt, Plus, MessageCircle, User, ArrowRight } from "lucide-react";
 import { useLang, navT } from "@/lib/language-context";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -35,7 +35,7 @@ export default function BottomNav() {
     { href: "/dashboard", icon: LayoutDashboard, label: t.home },
     { href: "/bills", icon: Receipt, label: t.bills },
     { href: "/create", icon: Plus, label: "", isCTA: true },
-    { href: "/inbox", icon: Inbox, label: t.inbox },
+    { href: "/chat", icon: MessageCircle, label: t.chat },
     { href: "/profile", icon: User, label: t.profile },
   ];
 

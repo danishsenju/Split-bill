@@ -21,5 +21,19 @@ export default async function DashboardPage() {
     .in("status", ["active", "overdue"])
     .order("created_at", { ascending: false });
 
-  return <DashboardClient profile={profile} bills={bills ?? []} userId={user.id} />;
+  const { data: activities } = await supabase
+    .from("activity_log")
+    .select("*, bills(id, title, pay_code)")
+    .eq("organizer_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  return (
+    <DashboardClient
+      profile={profile}
+      bills={bills ?? []}
+      userId={user.id}
+      activities={activities ?? []}
+    />
+  );
 }

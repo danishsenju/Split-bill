@@ -12,6 +12,7 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import Confetti from "@/components/ui/Confetti";
 import Grainient from "@/components/ui/Grainient";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import AnimatedAmount from "@/components/ui/AnimatedAmount";
 
 interface OrganizerProfile {
   name: string;
@@ -36,6 +37,17 @@ type PaymentTab = "bank" | "qr";
 
 const GRADIENT = "linear-gradient(90deg, rgb(160, 224, 171), rgb(255, 172, 46) 50%, rgb(165, 45, 37))";
 const PILL = "75.024px";
+const EASE = [0.23, 1, 0.32, 1] as const;
+
+// Staggered reveal — children float up in sequence (Emil Kowalski cadence)
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.06 } },
+};
+const rise = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+};
 
 const glass: CSSProperties = {
   background: "rgba(255,255,255,0.05)",
@@ -404,17 +416,20 @@ export default function PayPageClient({
           {equalStep === "entry" && (
             <motion.div
               key="entry"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.38, ease: [0.23, 1, 0.32, 1] }}
+              variants={{ ...stagger, exit: { opacity: 0, y: -16, transition: { duration: 0.3 } } }}
+              initial="hidden"
+              animate="show"
+              exit="exit"
               style={{ position: "relative", zIndex: 1, padding: "56px 24px 48px", display: "flex", flexDirection: "column", gap: "0" }}
             >
-              {/* Gradient strip top */}
-              <div style={{ height: "3px", borderRadius: "2px", background: GRADIENT, marginBottom: "28px", boxShadow: "0 0 28px rgba(255,172,46,0.45)" }} />
+              {/* Gradient strip top — draws itself in */}
+              <motion.div
+                variants={rise}
+                style={{ height: "3px", borderRadius: "2px", background: GRADIENT, marginBottom: "28px", boxShadow: "0 0 28px rgba(255,172,46,0.45)", transformOrigin: "left" }}
+              />
 
               {/* Bill header */}
-              <div style={{ marginBottom: "32px" }}>
+              <motion.div variants={rise} style={{ marginBottom: "32px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
                   <span style={{ fontSize: "20px" }}>{categoryEmoji}</span>
                   <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px" }}>{categoryName}</span>
@@ -439,47 +454,39 @@ export default function PayPageClient({
                 {bill.description && (
                   <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "13px", marginTop: "6px", lineHeight: 1.5 }}>{bill.description}</p>
                 )}
-              </div>
+              </motion.div>
 
-              {/* Greeting + amount hero — Grainient member theme */}
-              <div style={{ position: "relative", overflow: "hidden", borderRadius: "16px", marginBottom: "16px" }}>
+              {/* Greeting + amount hero — Grainient member theme + sheen sweep */}
+              <motion.div variants={rise} className="sheen" style={{ position: "relative", overflow: "hidden", borderRadius: "16px", marginBottom: "16px", boxShadow: "0 18px 50px -20px rgba(0,0,0,0.7)" }}>
                 <div style={{ position: "absolute", inset: 0 }}>
                   <Grainient color1="#af3131" color2="#342475" color3="#a88825" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={0.9} />
                 </div>
-                <div style={{ position: "relative", zIndex: 1, padding: "28px 24px", textAlign: "center" }}>
-                  <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "14px", marginBottom: "4px" }}>
+                <div style={{ position: "relative", zIndex: 1, padding: "30px 24px", textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px", marginBottom: "4px" }}>
                     Hai, <span style={{ color: "#ffffff", fontWeight: 700 }}>{resolvedName}</span> 👋
                   </p>
-                  <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: "16px" }}>
+                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "11px", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: "16px" }}>
                     Jumlah yang perlu dibayar
                   </p>
-                  <span style={{
-                    display: "block",
-                    fontSize: "62px",
-                    fontWeight: 800,
-                    fontFamily: "var(--font-plus-jakarta), system-ui",
-                    lineHeight: 1,
-                    color: "#ffffff",
-                    letterSpacing: "-0.02em",
-                  }}>
-                    {formatRM(amountOwed)}
-                  </span>
+                  <AnimatedAmount value={amountOwed} size={60} style={{ justifyContent: "center" }} />
                 </div>
-              </div>
+              </motion.div>
 
               {/* Pay Code */}
-              <div style={{ ...glass, padding: "20px 20px 16px", marginBottom: "24px" }}>
+              <motion.div variants={rise} style={{ ...glass, padding: "20px 20px 16px", marginBottom: "24px" }}>
                 <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "10px" }}>
                   Pay Code
                 </p>
                 <PayCodeDisplay code={bill.pay_code} />
-              </div>
+              </motion.div>
 
               {/* CTA */}
-              <PrimaryButton onClick={() => setShowPaymentSheet(true)}>
-                Buat Bayaran
-                <ChevronRight size={18} />
-              </PrimaryButton>
+              <motion.div variants={rise}>
+                <PrimaryButton onClick={() => setShowPaymentSheet(true)}>
+                  Buat Bayaran
+                  <ChevronRight size={18} />
+                </PrimaryButton>
+              </motion.div>
 
               {/* Payment bottom sheet */}
               <BottomSheet open={showPaymentSheet} onClose={() => setShowPaymentSheet(false)} title="Kaedah Bayaran">
@@ -573,14 +580,16 @@ export default function PayPageClient({
                 Kembali
               </motion.button>
 
-              {/* Amount hero — Grainient member theme */}
-              <div style={{ position: "relative", overflow: "hidden", borderRadius: "16px" }}>
+              {/* Amount hero — Grainient member theme + sheen sweep */}
+              <div className="sheen" style={{ position: "relative", overflow: "hidden", borderRadius: "16px", boxShadow: "0 18px 50px -20px rgba(0,0,0,0.7)" }}>
                 <div style={{ position: "absolute", inset: 0 }}>
                   <Grainient color1="#af3131" color2="#342475" color3="#a88825" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={0.9} />
                 </div>
                 <div style={{ position: "relative", zIndex: 1, padding: "28px 24px", textAlign: "center" }}>
                   <span style={{
-                    display: "inline-block",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "7px",
                     fontSize: "11px",
                     padding: "5px 14px",
                     borderRadius: PILL,
@@ -589,20 +598,10 @@ export default function PayPageClient({
                     background: "rgba(255,255,255,0.15)",
                     marginBottom: "16px",
                   }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ffd32a", display: "inline-block", boxShadow: "0 0 8px #ffd32a" }} className="breathe-glow" />
                     Menunggu pengesahan
                   </span>
-                  <span style={{
-                    display: "block",
-                    fontSize: "62px",
-                    fontWeight: 800,
-                    fontFamily: "var(--font-plus-jakarta), system-ui",
-                    lineHeight: 1,
-                    color: "#ffffff",
-                    letterSpacing: "-0.02em",
-                    marginBottom: "8px",
-                  }}>
-                    {formatRM(amountOwed)}
-                  </span>
+                  <AnimatedAmount value={amountOwed} size={60} style={{ justifyContent: "center", marginBottom: "8px" }} />
                   <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px" }}>{bill.title}</p>
                 </div>
               </div>
@@ -664,20 +663,33 @@ export default function PayPageClient({
           {/* Gradient strip */}
           <div style={{ height: "3px", borderRadius: "2px", background: GRADIENT, marginBottom: "20px", boxShadow: "0 0 24px rgba(255,172,46,0.4)" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-            {(["tuntut", "semak", "bayar"] as const).map((s, i) => (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                {i > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "12px" }}>›</span>}
-                <span style={{
-                  fontSize: "12px", padding: "6px 16px", borderRadius: PILL,
-                  ...(scanStep === s
-                    ? { background: GRADIENT, color: "#000", fontWeight: 600 }
-                    : { color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.1)" }
-                  ),
-                }}>
-                  {i + 1} {s === "tuntut" ? "Tuntut" : s === "semak" ? "Semak" : "Bayar"}
-                </span>
-              </div>
-            ))}
+            {(["tuntut", "semak", "bayar"] as const).map((s, i) => {
+              const active = scanStep === s;
+              return (
+                <div key={s} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  {i > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "12px" }}>›</span>}
+                  <div style={{ position: "relative" }}>
+                    {active && (
+                      <motion.div
+                        layoutId="scanActivePill"
+                        transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                        style={{ position: "absolute", inset: 0, borderRadius: PILL, background: GRADIENT, boxShadow: "0 4px 16px rgba(255,172,46,0.3)" }}
+                      />
+                    )}
+                    <span style={{
+                      position: "relative", zIndex: 1, display: "inline-block",
+                      fontSize: "12px", padding: "6px 16px", borderRadius: PILL,
+                      ...(active
+                        ? { color: "#000", fontWeight: 600 }
+                        : { color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.1)" }
+                      ),
+                    }}>
+                      {i + 1} {s === "tuntut" ? "Tuntut" : s === "semak" ? "Semak" : "Bayar"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -703,25 +715,44 @@ export default function PayPageClient({
                 const isClaimed = claimed > 0;
                 const isShared = available > 1;
                 return (
-                  <div
+                  <motion.div
                     key={item.id}
                     onClick={() => !isShared && toggleClaim(item)}
+                    whileTap={isShared ? undefined : { scale: 0.985 }}
+                    animate={{ background: isClaimed ? "rgba(160,224,171,0.08)" : "rgba(160,224,171,0)" }}
+                    transition={{ duration: 0.2 }}
                     style={{
                       display: "flex", alignItems: "center", gap: "12px", padding: "14px 20px",
                       borderBottom: idx < claimableItems.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                       cursor: isShared ? "default" : "pointer",
-                      background: isClaimed ? "rgba(160,224,171,0.06)" : "transparent",
-                      transition: "background 180ms ease",
                     }}
                   >
-                    <div style={{
-                      width: "20px", height: "20px", borderRadius: "6px", flexShrink: 0,
-                      border: `1.5px solid ${isClaimed ? "rgba(160,224,171,0.9)" : "rgba(255,255,255,0.2)"}`,
-                      background: isClaimed ? "rgba(160,224,171,0.9)" : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {isClaimed && <Check size={13} strokeWidth={3} style={{ color: "#000" }} />}
-                    </div>
+                    <motion.div
+                      animate={{
+                        borderColor: isClaimed ? "rgba(160,224,171,0.95)" : "rgba(255,255,255,0.2)",
+                        background: isClaimed ? "rgba(160,224,171,0.95)" : "rgba(160,224,171,0)",
+                      }}
+                      transition={{ duration: 0.18 }}
+                      style={{
+                        width: "20px", height: "20px", borderRadius: "6px", flexShrink: 0,
+                        borderWidth: "1.5px", borderStyle: "solid",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >
+                      <AnimatePresence>
+                        {isClaimed && (
+                          <motion.span
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                            style={{ display: "flex" }}
+                          >
+                            <Check size={13} strokeWidth={3} style={{ color: "#000" }} />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ color: "#fff", fontSize: "14px", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</p>
                       <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>
@@ -752,7 +783,7 @@ export default function PayPageClient({
                         {formatRM(lineTotalOf(item))}
                       </span>
                     )}
-                  </div>
+                  </motion.div>
                 );
               })}
               {claimableItems.length === 0 && (
@@ -760,12 +791,19 @@ export default function PayPageClient({
               )}
             </div>
 
-            {/* Running total */}
+            {/* Running total — pops on each claim change */}
             <div style={{ ...glass, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px" }}>Jumlah anda</span>
-              <span style={{ fontSize: "18px", fontWeight: 700, background: GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              <motion.span
+                key={scanAmountOwed}
+                initial={{ scale: 1.18, opacity: 0.6 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 420, damping: 20 }}
+                className="gradient-text"
+                style={{ fontSize: "19px", fontWeight: 800, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}
+              >
                 {formatRM(scanAmountOwed)}
-              </span>
+              </motion.span>
             </div>
 
             <PrimaryButton
@@ -940,17 +978,16 @@ export default function PayPageClient({
               <ArrowLeft size={14} /> Kembali
             </motion.button>
 
-            <div style={{ position: "relative", overflow: "hidden", borderRadius: "16px" }}>
+            <div className="sheen" style={{ position: "relative", overflow: "hidden", borderRadius: "16px", boxShadow: "0 18px 50px -20px rgba(0,0,0,0.7)" }}>
               <div style={{ position: "absolute", inset: 0 }}>
                 <Grainient color1="#af3131" color2="#342475" color3="#a88825" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={0.9} />
               </div>
               <div style={{ position: "relative", zIndex: 1, padding: "28px 24px", textAlign: "center" }}>
-                <span style={{ display: "inline-block", fontSize: "11px", padding: "5px 14px", borderRadius: PILL, border: "1px solid rgba(255,255,255,0.25)", color: "#fff", background: "rgba(255,255,255,0.15)", marginBottom: "16px" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "11px", padding: "5px 14px", borderRadius: PILL, border: "1px solid rgba(255,255,255,0.25)", color: "#fff", background: "rgba(255,255,255,0.15)", marginBottom: "16px" }}>
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ffd32a", display: "inline-block", boxShadow: "0 0 8px #ffd32a" }} className="breathe-glow" />
                   Menunggu pengesahan
                 </span>
-                <span style={{ display: "block", fontSize: "62px", fontWeight: 800, fontFamily: "var(--font-plus-jakarta), system-ui", lineHeight: 1, color: "#ffffff", letterSpacing: "-0.02em", marginBottom: "8px" }}>
-                  {formatRM(amountOwed)}
-                </span>
+                <AnimatedAmount value={amountOwed} size={60} animateKey={amountOwed} style={{ justifyContent: "center", marginBottom: "8px" }} />
                 <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "13px", marginBottom: "2px" }}>{bill.title}</p>
                 <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "11px" }}>Berdasarkan item yang anda tuntut</p>
               </div>
@@ -1091,15 +1128,30 @@ function SuccessScreen({ name, billTitle, amountOwed, memberToken, dismissPromo,
       <div style={{ height: "3px", borderRadius: "2px", background: "linear-gradient(90deg, rgb(160,224,171), rgb(100,200,120))", marginBottom: "20px", boxShadow: "0 0 28px rgba(160,224,171,0.5)" }} />
 
       <div style={{ ...glass, padding: "36px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", textAlign: "center" }}>
-        {/* Check ring with gradient border */}
-        <div style={{
-          width: "84px", height: "84px", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(160,224,171,0.15) 0%, transparent 70%)",
-          border: "1px solid rgba(160,224,171,0.35)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 0 32px rgba(160,224,171,0.2)",
-        }}>
-          <Check size={38} style={{ color: "#a0e0ab" }} strokeWidth={2.5} />
+        {/* Check ring — spring pop with breathing halo */}
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="breathe-glow" style={{ position: "absolute", inset: "-18px", borderRadius: "50%", background: "radial-gradient(circle, rgba(160,224,171,0.4) 0%, transparent 68%)", filter: "blur(10px)" }} />
+          <motion.div
+            initial={{ scale: 0.3, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
+            style={{
+              position: "relative",
+              width: "84px", height: "84px", borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(160,224,171,0.18) 0%, transparent 70%)",
+              border: "1px solid rgba(160,224,171,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 32px rgba(160,224,171,0.25)",
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 420, damping: 18, delay: 0.28 }}
+            >
+              <Check size={38} style={{ color: "#a0e0ab" }} strokeWidth={2.5} />
+            </motion.div>
+          </motion.div>
         </div>
 
         <div>
@@ -1119,9 +1171,7 @@ function SuccessScreen({ name, billTitle, amountOwed, memberToken, dismissPromo,
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Jumlah</span>
-            <span style={{ fontSize: "15px", fontWeight: 700, background: "linear-gradient(90deg, rgb(160,224,171), rgb(100,200,120))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              {formatRM(amountOwed)}
-            </span>
+            <AnimatedAmount value={amountOwed} size={16} duration={900} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Tarikh</span>

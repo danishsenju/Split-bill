@@ -41,6 +41,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/bills") ||
     request.nextUrl.pathname.startsWith("/create") ||
     request.nextUrl.pathname.startsWith("/inbox") ||
+    request.nextUrl.pathname.startsWith("/chat") ||
     request.nextUrl.pathname.startsWith("/profile");
 
   if (isOrganizerRoute && !user) {

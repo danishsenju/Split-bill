@@ -133,6 +133,27 @@ export interface ActivityLog {
   bills?: Bill;
 }
 
+export type MessageType = "text" | "bill_share";
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  body?: string;
+  message_type: MessageType;
+  bill_id?: string;
+  read_at?: string;
+  created_at: string;
+  // Optional joined bill snapshot for bill_share messages
+  bills?: {
+    id: string;
+    title: string;
+    pay_code: string;
+    total_amount: number;
+    category: string;
+  } | null;
+}
+
 export interface Reminder {
   id: string;
   bill_id: string;

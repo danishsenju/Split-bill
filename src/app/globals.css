@@ -144,6 +144,61 @@ body {
   66%       { transform: translate(-4%, 6%) scale(0.97); }
 }
 
+/* ── Emil-style polish: drifting gradient text, breathing glow, sheen sweep ── */
+@keyframes gradient-drift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Animated Deep Ocean gradient text — for hero amounts & accents */
+.gradient-text {
+  background: linear-gradient(
+    90deg,
+    rgb(160, 224, 171),
+    rgb(255, 172, 46) 35%,
+    rgb(255, 120, 90) 55%,
+    rgb(160, 224, 171) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-drift 7s ease-in-out infinite;
+}
+
+@keyframes breathe-glow {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.9; transform: scale(1.06); }
+}
+.breathe-glow { animation: breathe-glow 4.5s ease-in-out infinite; }
+
+/* Diagonal sheen sweep across glass cards */
+@keyframes sheen-sweep {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%) skewX(-18deg); }
+}
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.10),
+    transparent
+  );
+  transform: translateX(-120%) skewX(-18deg);
+  animation: sheen-sweep 5.5s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+
+/* Soft focus ring used by the guest input */
+@keyframes ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,172,46,0.0), 0 0 0px rgba(255,172,46,0.0); }
+  50%      { box-shadow: 0 0 0 1px rgba(255,172,46,0.35), 0 0 22px rgba(255,172,46,0.18); }
+}
+
 /* Bottom sheet backdrop */
 .sheet-backdrop {
   background: rgba(0,0,0,0.75);

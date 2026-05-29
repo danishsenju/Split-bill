@@ -7,23 +7,29 @@ import {
   motion,
   AnimatePresence,
   useMotionValue,
+  useTransform,
   animate,
 } from "framer-motion";
 import { Pencil, Trash2, ChevronDown } from "lucide-react";
-import { Bill, Profile } from "@/types";
+import { Bill, Profile, ActivityLog } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { formatRM, getDaysRemaining } from "@/lib/utils";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import Grainient from "@/components/ui/Grainient";
+import NotificationBell from "@/components/organizer/NotificationBell";
 import { useLang, dashboardT } from "@/lib/language-context";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+
+const clamp = (v: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, v));
 
 interface Props {
   profile: Profile | null;
   bills: Bill[];
   userId: string;
+  activities: ActivityLog[];
 }
 
 // ─── Main dashboard ────────────────────────────────────────────────────────
@@ -31,6 +37,7 @@ export default function DashboardClient({
   profile,
   bills: initialBills,
   userId,
+  activities,
 }: Props) {
   const { lang } = useLang();
   const t = dashboardT[lang];
@@ -184,40 +191,44 @@ export default function DashboardClient({
             minHeight: "60vh",
           }}
         >
-          {/* Live dot + date */}
+          {/* Live dot + date · notification bell */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, ease: EASE_OUT }}
-            className="flex items-center gap-2"
+            className="flex items-center justify-between gap-2"
           >
-            <motion.span
-              animate={{ opacity: [0.35, 1, 0.35] }}
-              transition={{
-                repeat: Infinity,
-                duration: 1.8,
-                ease: "easeInOut",
-              }}
-              style={{
-                width: "5px",
-                height: "5px",
-                borderRadius: "50%",
-                background: "#22c55e",
-                boxShadow: "0 0 8px rgba(34,197,94,0.7)",
-                display: "inline-block",
-              }}
-            />
-            <span
-              className="font-dm uppercase"
-              style={{
-                fontSize: "10px",
-                letterSpacing: "0.14em",
-                color: "rgba(245,240,232,0.5)",
-                textShadow: "0 1px 8px rgba(0,0,0,0.6)",
-              }}
-            >
-              {dateLabel || "·"}
-            </span>
+            <div className="flex items-center gap-2">
+              <motion.span
+                animate={{ opacity: [0.35, 1, 0.35] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.8,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  width: "5px",
+                  height: "5px",
+                  borderRadius: "50%",
+                  background: "#22c55e",
+                  boxShadow: "0 0 8px rgba(34,197,94,0.7)",
+                  display: "inline-block",
+                }}
+              />
+              <span
+                className="font-dm uppercase"
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.14em",
+                  color: "rgba(245,240,232,0.5)",
+                  textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+                }}
+              >
+                {dateLabel || "·"}
+              </span>
+            </div>
+
+            <NotificationBell activities={activities} />
           </motion.div>
 
           {/* Greeting */}
@@ -622,7 +633,15 @@ function EmptyState({
   );
 }
 
-// ─── Single bill row ──────────────────────────────────────────────────────
+// ─── Single bill row — swipe to reveal Edit / Padam ───────────────────────
+// Interaction design (à la Emil Kowalski): the row tracks the finger 1:1,
+// reveals two actions with spring physics, rubber-bands when over-pulled,
+// and a full swipe arms a haptic-confirmed delete that collapses the row.
+const EDIT_W = 78; // px slot for the Edit action
+const DELETE_W = 78; // px slot for the Padam action
+const REST = EDIT_W + DELETE_W; // resting open offset — both actions visible
+const SPRING = { type: "spring", stiffness: 520, damping: 42 } as const;
+
 function BillListRow({
   bill,
   delay,
@@ -643,46 +662,90 @@ function BillListRow({
   const daysLeft = getDaysRemaining(bill.due_date);
   const isOverdue = daysLeft < 0;
 
-  const [showMenu, setShowMenu] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [isPressing, setIsPressing] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
-  const didLongPress = useRef(false);
+  const x = useMotionValue(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wRef = useRef(320); // measured row width
+  const armRef = useRef(220); // |x| past which a full-swipe delete arms
+  const armedRef = useRef(false);
+  const draggedRef = useRef(false);
+  const removingRef = useRef(false);
 
-  function startPress() {
-    didLongPress.current = false;
-    setIsPressing(true);
-    timerRef.current = setTimeout(() => {
-      didLongPress.current = true;
-      navigator.vibrate?.(40);
-      setShowMenu(true);
-      setIsPressing(false);
-    }, 500);
+  const [open, setOpen] = useState(false);
+  const [armed, setArmed] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  // Measure the row so the arm threshold scales with screen width.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      wRef.current = el.offsetWidth;
+      armRef.current = Math.max(REST + 64, el.offsetWidth * 0.5);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Arm / disarm the full-swipe delete with a haptic tick on each crossing.
+  useEffect(() => {
+    const unsub = x.on("change", (v) => {
+      const shouldArm = -v >= armRef.current;
+      if (shouldArm !== armedRef.current) {
+        armedRef.current = shouldArm;
+        setArmed(shouldArm);
+        navigator.vibrate?.(shouldArm ? 26 : 12);
+      }
+    });
+    return unsub;
+  }, [x]);
+
+  // Padam panel grows leftward from its slot to fill the row as you over-pull,
+  // swallowing the Edit action — the visual promise that release will delete.
+  const deleteWidth = useTransform(x, (v) => {
+    const span = armRef.current - REST;
+    const tt = span > 0 ? clamp((-v - REST) / span, 0, 1) : 0;
+    return DELETE_W + tt * (wRef.current - DELETE_W);
+  });
+  // Edit fades as the Padam panel closes over it.
+  const editOpacity = useTransform(x, (v) => {
+    const span = armRef.current - REST;
+    return span > 0 ? clamp(1 - (-v - REST) / span, 0, 1) : 1;
+  });
+
+  function snapClosed() {
+    animate(x, 0, SPRING);
+    setOpen(false);
   }
-
-  function cancelPress() {
-    clearTimeout(timerRef.current);
-    setIsPressing(false);
+  function snapOpen() {
+    animate(x, -REST, SPRING);
+    setOpen(true);
+  }
+  function commitDelete() {
+    if (removingRef.current) return;
+    removingRef.current = true;
+    setArmed(true);
+    navigator.vibrate?.([18, 28, 40]);
+    // Slide fully off, then collapse the row height → onAnimationComplete deletes.
+    animate(x, -wRef.current, {
+      ...SPRING,
+      onComplete: () => setRemoving(true),
+    });
+  }
+  async function finalizeDelete() {
+    const supabase = createClient();
+    await supabase.from("bills").delete().eq("id", bill.id);
+    onDelete(bill.id);
   }
 
   function handleClick() {
-    if (didLongPress.current) {
-      didLongPress.current = false;
+    if (draggedRef.current) return; // ignore the click that ends a drag
+    if (open) {
+      snapClosed();
       return;
     }
     router.push(`/bills/${bill.id}`);
-  }
-
-  function closeMenu() {
-    setShowMenu(false);
-    setConfirmDelete(false);
-  }
-
-  async function handleDelete() {
-    const supabase = createClient();
-    await supabase.from("bills").delete().eq("id", bill.id);
-    closeMenu();
-    onDelete(bill.id);
   }
 
   const dueLabel = isOverdue
@@ -692,33 +755,125 @@ function BillListRow({
     : t.daysLeft(daysLeft);
 
   return (
-    <>
+    <motion.div
+      ref={containerRef}
+      initial={{ opacity: 0, y: 6 }}
+      animate={
+        removing
+          ? { height: 0, opacity: 0 }
+          : { height: "auto", opacity: 1, y: 0 }
+      }
+      transition={
+        removing
+          ? { duration: 0.34, ease: EASE_OUT }
+          : { delay, duration: 0.4, ease: EASE_OUT }
+      }
+      onAnimationComplete={() => {
+        if (removing) finalizeDelete();
+      }}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderTop: isFirst ? "none" : "1px solid var(--theme-hairline)",
+      }}
+    >
+      {/* ── Action layer (revealed beneath the row) ── */}
+      <div style={{ position: "absolute", inset: 0 }} aria-hidden={!open}>
+        {/* Edit */}
+        <motion.button
+          onClick={() => {
+            snapClosed();
+            router.push(`/bills/${bill.id}?edit=1`);
+          }}
+          tabIndex={open ? 0 : -1}
+          className="flex flex-col items-center justify-center gap-1 font-dm active:opacity-70"
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            right: DELETE_W,
+            width: EDIT_W,
+            opacity: editOpacity,
+            background: "var(--theme-surface-tint-2)",
+            color: "var(--theme-text)",
+            fontSize: "11px",
+            letterSpacing: "0.02em",
+          }}
+        >
+          <Pencil size={17} strokeWidth={1.8} />
+          Edit
+        </motion.button>
+
+        {/* Padam — expands on full swipe */}
+        <motion.button
+          onClick={commitDelete}
+          tabIndex={open ? 0 : -1}
+          className="flex items-center"
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: deleteWidth,
+            justifyContent: "flex-end",
+            paddingRight: (DELETE_W - 24) / 2,
+            background: armed ? "#ef4444" : "rgba(220,38,38,0.92)",
+            color: "#fff",
+            transition: "background 180ms cubic-bezier(0.23,1,0.32,1)",
+          }}
+        >
+          <motion.span
+            className="flex flex-col items-center gap-1 font-dm"
+            animate={{ scale: armed ? 1.12 : 1 }}
+            transition={SPRING}
+            style={{ fontSize: "11px", letterSpacing: "0.02em" }}
+          >
+            <Trash2 size={17} strokeWidth={1.8} />
+            Padam
+          </motion.span>
+        </motion.button>
+      </div>
+
+      {/* ── Foreground row (draggable, opaque) ── */}
       <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.4, ease: EASE_OUT }}
-        onPointerDown={startPress}
-        onPointerUp={cancelPress}
-        onPointerLeave={cancelPress}
-        onPointerCancel={cancelPress}
-        onPointerMove={cancelPress}
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: -wRef.current, right: 0 }}
+        dragElastic={{ left: 0.04, right: 0.12 }}
+        dragMomentum={false}
+        style={{
+          x,
+          position: "relative",
+          background: "var(--theme-bg)",
+          touchAction: "pan-y",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          WebkitTouchCallout: "none",
+        }}
+        onDragStart={() => {
+          draggedRef.current = false;
+        }}
+        onDrag={(_, info) => {
+          if (Math.abs(info.offset.x) > 4) draggedRef.current = true;
+        }}
+        onDragEnd={(_, info) => {
+          const offset = -x.get();
+          const vx = info.velocity.x;
+          if (offset >= armRef.current || (vx < -750 && offset > REST)) {
+            commitDelete();
+          } else if (offset > REST / 2 || vx < -350) {
+            snapOpen();
+          } else {
+            snapClosed();
+          }
+          // Let the click handler see the drag, then clear the flag.
+          setTimeout(() => {
+            draggedRef.current = false;
+          }, 0);
+        }}
         onClick={handleClick}
         onContextMenu={(e) => e.preventDefault()}
-        className="relative flex items-center gap-4 py-5 cursor-pointer -mx-2 px-2 rounded-[8px]"
-        style={
-          {
-            borderTop: isFirst ? "none" : "1px solid var(--theme-hairline)",
-            transform: isPressing ? "scale(0.985)" : "scale(1)",
-            background: isPressing
-              ? "radial-gradient(ellipse 80% 100% at 0% 50%, rgba(160,224,171,0.06) 0%, transparent 70%)"
-              : "transparent",
-            transition:
-              "transform 150ms cubic-bezier(0.23,1,0.32,1), background 220ms cubic-bezier(0.23,1,0.32,1)",
-            WebkitUserSelect: "none",
-            userSelect: "none",
-            WebkitTouchCallout: "none",
-          } as React.CSSProperties
-        }
+        className="flex items-center gap-4 py-5 cursor-pointer active:opacity-95"
       >
         {/* Category icon — monochrome, outlined */}
         <div className="shrink-0">
@@ -765,140 +920,6 @@ function BillListRow({
           {formatRM(bill.total_amount)}
         </span>
       </motion.div>
-
-      {/* ── Long-press context menu ─────────────────────────────────── */}
-      <AnimatePresence>
-        {showMenu && (
-          <>
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={closeMenu}
-              style={{
-                position: "fixed",
-                inset: 0,
-                background: "rgba(0,0,0,0.65)",
-                zIndex: 50,
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-              }}
-            />
-            <motion.div
-              key="sheet"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.35 }}
-              style={{
-                position: "fixed",
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 51,
-                background: "#0a0a0a",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "24px 24px 0 0",
-                padding:
-                  "20px 20px calc(env(safe-area-inset-bottom) + 20px)",
-                maxWidth: 480,
-                margin: "0 auto",
-              }}
-            >
-              <p
-                className="font-clash truncate mb-5"
-                style={{
-                  fontSize: "15px",
-                  fontWeight: 500,
-                  color: "#F5F0E8",
-                  letterSpacing: "-0.005em",
-                }}
-              >
-                {bill.title}
-              </p>
-
-              {!confirmDelete ? (
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => {
-                      closeMenu();
-                      router.push(`/bills/${bill.id}`);
-                    }}
-                    className="flex items-center gap-3 w-full font-dm text-sm active:opacity-60"
-                    style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: "12px",
-                      padding: "14px 16px",
-                      color: "#F5F0E8",
-                      transition: "opacity 150ms",
-                    }}
-                  >
-                    <Pencil size={16} />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(true)}
-                    className="flex items-center gap-3 w-full font-dm text-sm active:opacity-60"
-                    style={{
-                      background: "rgba(239,68,68,0.06)",
-                      border: "1px solid rgba(239,68,68,0.18)",
-                      borderRadius: "12px",
-                      padding: "14px 16px",
-                      color: "#ef4444",
-                      transition: "opacity 150ms",
-                    }}
-                  >
-                    <Trash2 size={16} />
-                    Padam
-                  </button>
-                  <button
-                    onClick={closeMenu}
-                    className="w-full font-dm text-sm active:opacity-50 mt-1"
-                    style={{
-                      color: "#6d6d6d",
-                      padding: "12px",
-                    }}
-                  >
-                    Batal
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <p
-                    className="font-dm text-center mb-2"
-                    style={{ color: "#6d6d6d", fontSize: "13px" }}
-                  >
-                    Pasti nak padam bil ini?
-                  </p>
-                  <button
-                    onClick={handleDelete}
-                    className="w-full font-dm font-semibold text-sm active:opacity-60"
-                    style={{
-                      background: "#ef4444",
-                      borderRadius: "12px",
-                      padding: "14px 0",
-                      color: "#ffffff",
-                      transition: "opacity 150ms",
-                    }}
-                  >
-                    Ya, padam
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(false)}
-                    className="w-full font-dm text-sm active:opacity-50"
-                    style={{ color: "#6d6d6d", padding: "12px" }}
-                  >
-                    Batal
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+    </motion.div>
   );
 }

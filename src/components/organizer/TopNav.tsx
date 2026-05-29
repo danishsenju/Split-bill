@@ -20,7 +20,7 @@ export default function TopNav() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/bills", label: t.bills },
     { href: "/create", label: t.createBill, isCTA: true },
-    { href: "/inbox", label: t.inbox },
+    { href: "/chat", label: t.chat },
   ];
 
   useEffect(() => {

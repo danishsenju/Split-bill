@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Share2, Bell, Flag, Check, Copy } from "lucide-react";
+import { ArrowLeft, Share2, Bell, Flag, Check, Copy, Pencil } from "lucide-react";
 import { Bill, Flag as FlagType } from "@/types";
 import { createClient } from "@/lib/supabase";
 import { formatRM, formatDaysRemaining, getDaysRemaining, getInitial, formatTime, categoryTone } from "@/lib/utils";
@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useLang, billDetailT } from "@/lib/language-context";
 import { useMotionValue, animate } from "framer-motion";
 import { NoiseBackground } from "@/components/ui/NoiseBackground";
+import EditBillSheet from "@/components/organizer/EditBillSheet";
 
 // Emil: strong ease-out — starts fast, gives instant feedback on enter
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
@@ -29,10 +30,12 @@ interface Profile {
 export default function BillDetailClient({
   bill: initialBill,
   flags,
+  initialEdit = false,
 }: {
   bill: Bill;
   flags: FlagType[];
   profile: Profile | null;
+  initialEdit?: boolean;
 }) {
   const router = useRouter();
   const { lang } = useLang();
@@ -40,6 +43,14 @@ export default function BillDetailClient({
   const [bill, setBill] = useState(initialBill);
   const [marking, setMarking] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(initialEdit);
+
+  // Clean the ?edit=1 deep-link param so refresh/back doesn't force edit mode.
+  useEffect(() => {
+    if (initialEdit && typeof window !== "undefined") {
+      window.history.replaceState(null, "", `/bills/${initialBill.id}`);
+    }
+  }, [initialEdit, initialBill.id]);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const members = bill.bill_members ?? [];
@@ -180,6 +191,16 @@ export default function BillDetailClient({
           >
             {bill.title}
           </h1>
+          <motion.button
+            onClick={() => setEditing(true)}
+            whileTap={{ scale: 0.88 }}
+            transition={{ type: "spring", stiffness: 400, damping: 22 }}
+            className="p-1"
+            aria-label={t.edit.editAria}
+            style={{ color: "rgba(245,240,232,0.7)" }}
+          >
+            <Pencil size={18} />
+          </motion.button>
           <motion.button
             onClick={() => navigator.share?.({ url: `${appUrl}/bills/${bill.id}` })}
             whileTap={{ scale: 0.88 }}
@@ -575,6 +596,20 @@ export default function BillDetailClient({
           </div>
         )}
       </div>
+
+      {/* ── Edit bill sheet ── */}
+      <AnimatePresence>
+        {editing && (
+          <EditBillSheet
+            bill={bill}
+            onClose={() => setEditing(false)}
+            onSaved={(updated) => {
+              // Preserve any items the edit refetch didn't include
+              setBill((prev) => ({ ...prev, ...updated }));
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
