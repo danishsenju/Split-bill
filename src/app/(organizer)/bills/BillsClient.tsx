@@ -10,7 +10,7 @@ import {
 } from "framer-motion";
 import { Search, Plus, ChevronDown, X } from "lucide-react";
 import { Bill } from "@/types";
-import { formatRM, getDaysRemaining } from "@/lib/utils";
+import { getDaysRemaining } from "@/lib/utils";
 import BillCard from "@/components/ui/BillCard";
 import { useLang, billsT } from "@/lib/language-context";
 

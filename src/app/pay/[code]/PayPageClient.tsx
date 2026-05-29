@@ -2,7 +2,6 @@
 
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { Copy, Check, Upload, X, ArrowLeft, ChevronRight, Download, Flag, Plus, Minus } from "lucide-react";
 import { Bill, BillItem, BillMember } from "@/types";
 import { createClient } from "@/lib/supabase";
