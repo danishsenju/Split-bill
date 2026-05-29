@@ -7,6 +7,12 @@ export default async function FriendsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
+  const { data: ownProfile } = await supabase
+    .from("profiles")
+    .select("name, username")
+    .eq("id", user.id)
+    .maybeSingle();
+
   const { data: raw } = await supabase
     .from("friendships")
     .select("id, friend_user_id, created_at, profiles!friendships_friend_user_id_fkey(id, name, username)")
@@ -23,5 +29,11 @@ export default async function FriendsPage() {
       : (f.profiles as { id: string; name: string; username?: string } | null),
   }));
 
-  return <FriendsClient initialFriends={friendships} />;
+  return (
+    <FriendsClient
+      initialFriends={friendships}
+      userId={user.id}
+      ownName={(ownProfile?.name as string) ?? "Pengguna"}
+    />
+  );
 }

@@ -716,16 +716,18 @@ export default function ProfileClient({
             </Link>
 
             {/* Privacy */}
-            <SettingRow
-              icon={<Shield size={16} />}
-              gradient="linear-gradient(135deg, #64748B, #475569)"
-              label={t.privacyLabel}
-              sublabel={t.privacySub}
-              right={
-                <ChevronRight size={16} style={{ color: "rgba(245,240,232,0.4)" }} />
-              }
-              border={false}
-            />
+            <Link href="/profile/privacy" style={{ display: "block" }} className="active:bg-white/[0.03]">
+              <SettingRow
+                icon={<Shield size={16} />}
+                gradient="linear-gradient(135deg, #64748B, #475569)"
+                label={t.privacyLabel}
+                sublabel={t.privacySub}
+                right={
+                  <ChevronRight size={16} style={{ color: "rgba(245,240,232,0.4)" }} />
+                }
+                border={false}
+              />
+            </Link>
           </div>
         </motion.div>
 

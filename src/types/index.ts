@@ -23,6 +23,8 @@ export interface Profile {
   bank_account?: string;
   bank_holder_name?: string;
   qr_url?: string;
+  hide_phone?: boolean;
+  hide_email?: boolean;
   created_at: string;
   updated_at: string;
 }

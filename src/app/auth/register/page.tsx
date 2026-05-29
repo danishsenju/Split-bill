@@ -144,6 +144,17 @@ function RegisterForm() {
         });
       }
 
+      // If arriving via an invite link, auto-connect as contacts
+      const inviteId = localStorage.getItem("kolekduit_invite");
+      if (inviteId && inviteId !== authData.user.id) {
+        await fetch("/api/invite/accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inviterId: inviteId }),
+        });
+      }
+      localStorage.removeItem("kolekduit_invite");
+
       router.push("/dashboard");
       router.refresh();
     } catch (err) {

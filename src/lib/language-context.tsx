@@ -214,6 +214,128 @@ export const notifT = {
   },
 } as const;
 
+// ─── Invite / referral translations ──────────────────────────────────────
+export const inviteT = {
+  bm: {
+    // Friends-page invite hero
+    heroKicker: "Jemput Kawan",
+    heroTitle: "Kongsi link, terus jadi kenalan.",
+    heroDesc:
+      "Hantar link peribadi ni. Bila kawan daftar, mereka auto jadi kenalan awak — terus boleh kongsi bil & sembang.",
+    copy: "Salin Link",
+    copied: "Disalin!",
+    shareWA: "Kongsi via WhatsApp",
+    yourLink: "Link jemputan anda",
+    waMessage: (name: string, link: string) =>
+      `Jom guna kolekduit — settle hutang tanpa drama! Daftar guna link ni & kita terus jadi kenalan: ${link}`,
+    // Landing page
+    landKicker: "Anda dijemput",
+    invitedByLabel: "Dijemput oleh",
+    invitedBy: (name: string) => `${name} jemput anda`,
+    landTitle: "Settle hutang,\ntanpa drama.",
+    landDesc:
+      "kolekduit ialah cara paling smooth untuk kongsi bil, track siapa dah bayar, dan kutip duit — semua dalam satu tempat.",
+    whatIsThis: "Apa link ni?",
+    whatIsThisDesc:
+      "Bila awak daftar melalui link ni, awak terus jadi kenalan penjemput. Lepas tu kamu boleh kongsi bil & sembang dalam app.",
+    f1Title: "Split & track",
+    f1Desc: "Bahagi bil sama rata atau ikut item. Tengok siapa dah bayar secara langsung.",
+    f2Title: "Personal pay link",
+    f2Desc: "Setiap ahli dapat link sendiri. Bayar, swipe confirm, siap.",
+    f3Title: "Sembang & kongsi",
+    f3Desc: "Kongsi bil terus dalam chat atau WhatsApp. Tiada lagi drama hutang.",
+    ctaRegister: "Daftar & Jadi Kenalan",
+    ctaLogin: "Saya dah ada akaun",
+    addFriendCta: "Tambah Sebagai Kenalan",
+    adding: "Menambah...",
+    added: "Sudah jadi kenalan!",
+    ownLink: "Ini link jemputan anda sendiri.",
+    goChat: "Pergi ke Sembang",
+  },
+  en: {
+    heroKicker: "Invite a Friend",
+    heroTitle: "Share a link, instantly connect.",
+    heroDesc:
+      "Send your personal link. When a friend signs up, they're auto-added as your contact — ready to split bills & chat.",
+    copy: "Copy Link",
+    copied: "Copied!",
+    shareWA: "Share via WhatsApp",
+    yourLink: "Your invite link",
+    waMessage: (name: string, link: string) =>
+      `Let's use kolekduit — settle debts without drama! Sign up with my link and we'll instantly connect: ${link}`,
+    landKicker: "You're invited",
+    invitedByLabel: "Invited by",
+    invitedBy: (name: string) => `${name} invited you`,
+    landTitle: "Settle debts,\nno drama.",
+    landDesc:
+      "kolekduit is the smoothest way to split bills, track who has paid, and collect money — all in one place.",
+    whatIsThis: "What is this link?",
+    whatIsThisDesc:
+      "When you sign up through this link, you instantly become the inviter's contact. Then you can share bills & chat in-app.",
+    f1Title: "Split & track",
+    f1Desc: "Split equally or by item. See who has paid in real time.",
+    f2Title: "Personal pay link",
+    f2Desc: "Every member gets their own link. Pay, swipe to confirm, done.",
+    f3Title: "Chat & share",
+    f3Desc: "Share bills right in chat or WhatsApp. No more debt drama.",
+    ctaRegister: "Sign Up & Connect",
+    ctaLogin: "I already have an account",
+    addFriendCta: "Add as Contact",
+    adding: "Adding...",
+    added: "Connected!",
+    ownLink: "This is your own invite link.",
+    goChat: "Go to Chats",
+  },
+} as const;
+
+// ─── Privacy & Security translations ──────────────────────────────────────
+export const privacyT = {
+  bm: {
+    title: "Privasi & Keselamatan",
+    subtitle: "Urus maklumat & apa yang orang lain nampak",
+    secDetails: "Maklumat Diri",
+    secVisibility: "Keterlihatan",
+    fName: "Nama Penuh",
+    fUsername: "Username",
+    fPhone: "No. Telefon",
+    fEmail: "Email",
+    emailNote: "Email tak boleh ditukar di sini",
+    hidePhone: "Sembunyi nombor telefon",
+    hidePhoneSub: "Pengguna lain tak nampak nombor awak",
+    hideEmail: "Sembunyi email",
+    hideEmailSub: "Pengguna lain tak nampak email awak",
+    save: "Simpan Perubahan",
+    saving: "Menyimpan...",
+    saved: "Disimpan!",
+    errUsername: "Username 3–20 aksara, huruf/nombor/_ sahaja",
+    errUsernameTaken: "Username sudah digunakan",
+    errSave: "Gagal simpan. Cuba lagi.",
+    phonePlaceholder: "+60123456789",
+  },
+  en: {
+    title: "Privacy & Security",
+    subtitle: "Manage your info & what others can see",
+    secDetails: "Personal Details",
+    secVisibility: "Visibility",
+    fName: "Full Name",
+    fUsername: "Username",
+    fPhone: "Phone Number",
+    fEmail: "Email",
+    emailNote: "Email can't be changed here",
+    hidePhone: "Hide phone number",
+    hidePhoneSub: "Other users won't see your number",
+    hideEmail: "Hide email",
+    hideEmailSub: "Other users won't see your email",
+    save: "Save Changes",
+    saving: "Saving...",
+    saved: "Saved!",
+    errUsername: "Username 3–20 chars, letters/numbers/_ only",
+    errUsernameTaken: "Username already taken",
+    errSave: "Failed to save. Try again.",
+    phonePlaceholder: "+60123456789",
+  },
+} as const;
+
 // ─── Chat translations ─────────────────────────────────────────────────────
 export const chatT = {
   bm: {
