@@ -1,23 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import Silk from "@/components/ui/Silk";
+import { Suspense } from "react";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "verification_failed") setError("Link pengesahan tidak sah atau sudah tamat tempoh. Sila daftar semula.");
+    if (err === "missing_code") setError("Link pengesahan tidak lengkap. Cuba klik semula dari email anda.");
+  }, [searchParams]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -31,7 +39,11 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError("Email atau kata laluan salah. Cuba lagi.");
+      if (authError.message.toLowerCase().includes("email not confirmed")) {
+        setError("Email belum disahkan. Semak inbox anda dan klik link pengesahan terlebih dahulu.");
+      } else {
+        setError("Email atau kata laluan salah. Cuba lagi.");
+      }
       setLoading(false);
       return;
     }
@@ -238,6 +250,14 @@ export default function LoginPage() {
         </motion.form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
 
