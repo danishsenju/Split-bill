@@ -251,6 +251,21 @@ export const inviteT = {
     added: "Sudah jadi kenalan!",
     ownLink: "Ini link jemputan anda sendiri.",
     goChat: "Pergi ke Sembang",
+    // Intro ad sequence
+    introSkip: "Langkau",
+    introBrand: "kolekduit",
+    introOutroKicker: "Mula sekarang",
+    introOutroTitle: "Settle hutang,\ntanpa drama.",
+    introOutroDesc: "Daftar melalui jemputan ni & terus jadi kenalan.",
+    introScenes: (name: string | null) => [
+      {
+        kicker: "Jemputan peribadi",
+        title: name ? `${name}\njemput anda.` : "Anda\ndijemput.",
+      },
+      { kicker: "01 — Kongsi", title: "Bahagi apa-apa bil\ndalam saat." },
+      { kicker: "02 — Jejak", title: "Tengok siapa dah bayar,\nsecara langsung." },
+      { kicker: "03 — Selesai", title: "Kutip duit\ntanpa kejar-kejar." },
+    ],
   },
   en: {
     heroKicker: "Invite a Friend",
@@ -285,6 +300,21 @@ export const inviteT = {
     added: "Connected!",
     ownLink: "This is your own invite link.",
     goChat: "Go to Chats",
+    // Intro ad sequence
+    introSkip: "Skip",
+    introBrand: "kolekduit",
+    introOutroKicker: "Get started",
+    introOutroTitle: "Settle debts,\nno drama.",
+    introOutroDesc: "Sign up through this invite & instantly connect.",
+    introScenes: (name: string | null) => [
+      {
+        kicker: "Personal invitation",
+        title: name ? `${name}\ninvited you.` : "You're\ninvited.",
+      },
+      { kicker: "01 — Split", title: "Divide any bill\nin seconds." },
+      { kicker: "02 — Track", title: "See who's paid,\nin real time." },
+      { kicker: "03 — Settle", title: "Collect money\nwithout the chase." },
+    ],
   },
 } as const;
 
