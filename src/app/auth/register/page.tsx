@@ -32,8 +32,6 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState("");
 
   // Pre-fill from pay page URL params
   const [memberToken, setMemberToken] = useState("");
@@ -97,90 +95,52 @@ function RegisterForm() {
     setError("");
 
     try {
-      const supabase = createClient();
-
-      // Check username uniqueness
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", username.toLowerCase())
-        .maybeSingle();
-      if (existing) throw new Error("Username sudah digunakan. Pilih username lain.");
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            name: name.trim(),
-            username: username.toLowerCase(),
-            phone: phone || null,
-            payment_method: paymentMethod,
-            bank_name: paymentMethod === "bank" ? bankName : null,
-            bank_account: paymentMethod === "bank" ? bankAccount : null,
-            bank_holder_name: paymentMethod === "bank" ? bankHolder : null,
-          },
-        },
+      // Server-side registration — creates user as email-confirmed (no verification email)
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          name: name.trim(),
+          username: username.toLowerCase(),
+          phone: phone || undefined,
+          payment_method: paymentMethod,
+          bank_name: paymentMethod === "bank" ? bankName : undefined,
+          bank_account: paymentMethod === "bank" ? bankAccount : undefined,
+          bank_holder_name: paymentMethod === "bank" ? bankHolder : undefined,
+        }),
       });
 
-      if (authError) throw new Error(authError.message);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Pendaftaran gagal. Cuba lagi.");
 
-      // Supabase returns { user: null, session: null, error: null } when the email
-      // is already registered but unconfirmed — to prevent email enumeration.
-      // Treat this exactly like a normal verification-sent flow.
-      if (!authData.user) {
-        setRegisteredEmail(email);
-        setVerificationSent(true);
-        setLoading(false);
-        return;
-      }
+      // Sign in to establish a session
+      const supabase = createClient();
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError || !signInData.user) throw new Error("Log masuk selepas daftar gagal. Sila log masuk semula.");
 
-      // Email confirmation required — session is null
-      if (!authData.session) {
-        setRegisteredEmail(email);
-        setVerificationSent(true);
-        setLoading(false);
-        return;
-      }
-
-      // Session exists → email confirmation disabled, proceed immediately
-      let qrUrl: string | undefined;
+      // Upload QR now that we have a valid session
       if (paymentMethod === "qr" && qrFile) {
         const { data: uploadData } = await supabase.storage
           .from("qr-codes")
-          .upload(`${authData.user.id}/qr.png`, qrFile, { upsert: true });
+          .upload(`${signInData.user.id}/qr.png`, qrFile, { upsert: true });
         if (uploadData) {
           const { data: urlData } = supabase.storage.from("qr-codes").getPublicUrl(uploadData.path);
-          qrUrl = urlData.publicUrl;
+          await supabase.from("profiles").update({ qr_url: urlData.publicUrl }).eq("id", signInData.user.id);
         }
       }
-
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: authData.user.id,
-        name: name.trim(),
-        username: username.toLowerCase(),
-        email,
-        phone: phone || null,
-        payment_method: paymentMethod,
-        bank_name: paymentMethod === "bank" ? bankName : null,
-        bank_account: paymentMethod === "bank" ? bankAccount : null,
-        bank_holder_name: paymentMethod === "bank" ? bankHolder : null,
-        qr_url: qrUrl,
-      });
-
-      if (profileError) throw new Error("Gagal simpan profil: " + profileError.message);
 
       if (memberToken) {
         await fetch("/api/member/link", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: memberToken, userId: authData.user.id, name: name.trim() }),
+          body: JSON.stringify({ token: memberToken, userId: signInData.user.id, name: name.trim() }),
         });
       }
 
       const inviteId = localStorage.getItem("kolekduit_invite");
-      if (inviteId && inviteId !== authData.user.id) {
+      if (inviteId && inviteId !== signInData.user.id) {
         await fetch("/api/invite/accept", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -197,71 +157,6 @@ function RegisterForm() {
     }
   }
 
-  if (verificationSent) {
-    return (
-      <div className="relative min-h-dvh overflow-hidden" style={{ background: "#000" }}>
-        <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden>
-          <Silk speed={5} scale={1} color="#270d90" noiseIntensity={1.5} rotation={4.18} />
-        </div>
-        <div
-          aria-hidden
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse 90% 70% at 50% 50%, transparent 0%, rgba(0,0,0,0.45) 70%, rgba(0,0,0,0.78) 100%)" }}
-        />
-        <div className="relative z-10 min-h-dvh flex items-center justify-center px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: EASE_OUT }}
-            className="w-full max-w-sm text-center"
-          >
-            <div
-              className="text-5xl mb-6"
-              style={{ filter: "drop-shadow(0 0 20px rgba(160,224,171,0.5))" }}
-            >
-              📩
-            </div>
-            <h2
-              className="font-clash mb-3"
-              style={{ fontSize: "28px", fontWeight: 500, color: "#F5F0E8", letterSpacing: "-0.03em" }}
-            >
-              Semak email anda
-            </h2>
-            <p
-              className="font-dm mb-2"
-              style={{ fontSize: "14px", color: "rgba(245,240,232,0.6)", lineHeight: 1.6 }}
-            >
-              Kami hantar link pengesahan ke
-            </p>
-            <p
-              className="font-dm mb-6"
-              style={{ fontSize: "15px", color: "#a0e0ab", fontWeight: 600 }}
-            >
-              {registeredEmail}
-            </p>
-            <p
-              className="font-dm mb-8"
-              style={{ fontSize: "13px", color: "rgba(245,240,232,0.45)", lineHeight: 1.6 }}
-            >
-              Klik link dalam email tersebut untuk aktifkan akaun anda.
-              <br /><br />
-              Semak folder <strong style={{ color: "rgba(245,240,232,0.7)" }}>Spam / Junk</strong> jika tak jumpa.
-              Jika email ini sudah pernah didaftar, link pengesahan yang sama dihantar semula.
-            </p>
-            <div className="flex flex-col gap-3 items-center">
-              <Link
-                href="/auth/login"
-                className="font-dm text-sm"
-                style={{ color: "#F5F0E8", textDecoration: "underline", textDecorationColor: "rgba(245,240,232,0.3)", textUnderlineOffset: "3px" }}
-              >
-                Dah ada akaun? Log Masuk
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative min-h-dvh overflow-hidden" style={{ background: "#000" }}>
