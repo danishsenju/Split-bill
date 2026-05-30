@@ -125,7 +125,16 @@ function RegisterForm() {
       });
 
       if (authError) throw new Error(authError.message);
-      if (!authData.user) throw new Error("Pendaftaran gagal");
+
+      // Supabase returns { user: null, session: null, error: null } when the email
+      // is already registered but unconfirmed — to prevent email enumeration.
+      // Treat this exactly like a normal verification-sent flow.
+      if (!authData.user) {
+        setRegisteredEmail(email);
+        setVerificationSent(true);
+        setLoading(false);
+        return;
+      }
 
       // Email confirmation required — session is null
       if (!authData.session) {
@@ -234,15 +243,20 @@ function RegisterForm() {
               className="font-dm mb-8"
               style={{ fontSize: "13px", color: "rgba(245,240,232,0.45)", lineHeight: 1.6 }}
             >
-              Klik link dalam email tersebut untuk aktifkan akaun anda. Semak folder Spam jika tak jumpa.
+              Klik link dalam email tersebut untuk aktifkan akaun anda.
+              <br /><br />
+              Semak folder <strong style={{ color: "rgba(245,240,232,0.7)" }}>Spam / Junk</strong> jika tak jumpa.
+              Jika email ini sudah pernah didaftar, link pengesahan yang sama dihantar semula.
             </p>
-            <Link
-              href="/auth/login"
-              className="font-dm text-sm"
-              style={{ color: "#F5F0E8", textDecoration: "underline", textDecorationColor: "rgba(245,240,232,0.3)", textUnderlineOffset: "3px" }}
-            >
-              Kembali ke Log Masuk
-            </Link>
+            <div className="flex flex-col gap-3 items-center">
+              <Link
+                href="/auth/login"
+                className="font-dm text-sm"
+                style={{ color: "#F5F0E8", textDecoration: "underline", textDecorationColor: "rgba(245,240,232,0.3)", textUnderlineOffset: "3px" }}
+              >
+                Dah ada akaun? Log Masuk
+              </Link>
+            </div>
           </motion.div>
         </div>
       </div>
